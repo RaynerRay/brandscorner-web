@@ -1,0 +1,342 @@
+import Image from "next/image";
+import Link from "next/link";
+import React, { useState, useCallback } from "react";
+import Ratings from "../ratings";
+import { Heart, MapPin, X, CheckCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import CartIcon from "apps/user-ui/src/assets/svgs/cart-icon";
+import { useStore } from "apps/user-ui/src/store";
+import useUser from "apps/user-ui/src/hooks/useUser";
+import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
+import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
+import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
+import { isProtected } from "apps/user-ui/src/utils/protected";
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1635405074683-96d6921a2a68?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGVjb21tZXJjZXxlbnwwfHwwfHx8MA%3D%3D";
+
+const getSafeImageUrl = (url?: string) =>
+  url && url.trim() !== "" ? url : FALLBACK_IMAGE;
+
+const ProductDetailsCard = ({
+  data,
+  setOpen,
+}: {
+  data: any;
+  setOpen: (open: boolean) => void;
+}) => {
+  const [activeImage, setActiveImage] = useState(0);
+  const [isSelected, setIsSelected] = useState(data?.colors?.[0] || "");
+  const [isSizeSelected, setIsSizeSelected] = useState(data?.sizes?.[0] || "");
+  const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [cartNotification, setCartNotification] = useState(false);
+
+  // Per-image fallback tracking: maps index -> display url
+  const [imgUrls, setImgUrls] = useState<Record<number, string>>(() => {
+    const initial: Record<number, string> = {};
+    data?.images?.forEach((img: any, i: number) => {
+      initial[i] = getSafeImageUrl(img?.url);
+    });
+    // Ensure at least index 0 has a value
+    if (!initial[0]) initial[0] = FALLBACK_IMAGE;
+    return initial;
+  });
+
+  const addToCart = useStore((state: any) => state.addToCart);
+  const cart = useStore((state: any) => state.cart);
+  const isInCart = cart.some((item: any) => item.id === data.id);
+  const addToWishlist = useStore((state: any) => state.addToWishlist);
+  const removeFromWishlist = useStore((state: any) => state.removeFromWishlist);
+  const wishlist = useStore((state: any) => state.wishlist);
+  const isWishlisted = wishlist.some((item: any) => item.id === data.id);
+  const { user } = useUser();
+  const location = useLocationTracking();
+  const deviceInfo = useDeviceTracking();
+
+  const estimatedDelivery = new Date();
+  estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);
+
+  const router = useRouter();
+
+  const handleImgError = useCallback((index: number) => {
+    setImgUrls((prev) => ({ ...prev, [index]: FALLBACK_IMAGE }));
+  }, []);
+
+  const handleAddToCart = useCallback(() => {
+    if (isInCart) return;
+    addToCart(
+      {
+        ...data,
+        quantity,
+        selectedOptions: { color: isSelected, size: isSizeSelected },
+      },
+      user,
+      location,
+      deviceInfo
+    );
+    setCartNotification(true);
+    setTimeout(() => setCartNotification(false), 2500);
+  }, [isInCart, data, quantity, isSelected, isSizeSelected, user, location, deviceInfo, addToCart]);
+
+  const handleChat = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const res = await axiosInstance.post(
+        "/chatting/api/create-user-conversationGroup",
+        { sellerId: data?.Shop?.sellerId },
+        isProtected
+      );
+      router.push(`/inbox?conversationId=${res.data.conversation.id}`);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const activeImageUrl = imgUrls[activeImage] ?? FALLBACK_IMAGE;
+
+  return (
+    <div
+      className="fixed flex items-center justify-center top-0 left-0 h-screen w-full bg-[#0000001d] z-50"
+      onClick={() => setOpen(false)}
+    >
+      <div
+        className="w-[90%] md:w-[70%] md:mt-14 2xl:mt-0 h-max overflow-scroll min-h-[70vh] p-4 md:p-6 bg-white shadow-md rounded-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Cart notification toast */}
+        <div
+          className={`
+            fixed top-6 left-1/2 -translate-x-1/2 z-[60]
+            flex items-center gap-2
+            bg-gray-900 text-white text-sm font-medium
+            px-4 py-2.5 rounded-full shadow-xl
+            transition-all duration-300 ease-in-out
+            ${cartNotification ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-3 pointer-events-none"}
+          `}
+          aria-live="polite"
+        >
+          <CheckCircle size={16} className="text-green-400 shrink-0" />
+          Added to cart!
+        </div>
+
+        <div className="w-full flex flex-col md:flex-row">
+          <div className="w-full md:w-1/2 h-full">
+            <Image
+              src={activeImageUrl}
+              alt={data?.title ?? "Product image"}
+              width={400}
+              height={400}
+              className="w-full rounded-lg object-contain"
+              onError={() => handleImgError(activeImage)}
+            />
+            {/* Thumbnails */}
+            <div className="flex gap-2 mt-4">
+              {data?.images?.map((img: any, index: number) => (
+                <div
+                  key={index}
+                  className={`cursor-pointer border rounded-md ${
+                    activeImage === index
+                      ? "border-gray-500 pt-1"
+                      : "border-transparent"
+                  }`}
+                  onClick={() => setActiveImage(index)}
+                >
+                  <Image
+                    src={imgUrls[index] ?? FALLBACK_IMAGE}
+                    alt={`Thumbnail ${index + 1}`}
+                    width={80}
+                    height={80}
+                    className="rounded-md"
+                    onError={() => handleImgError(index)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full md:w-1/2 md:pl-8 mt-6 md:mt-0">
+            {/* Seller Info */}
+            <div className="border-b relative pb-3 border-gray-200 flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <Image
+                  src={getSafeImageUrl(data?.Shop?.avatar)}
+                  alt="Shop Logo"
+                  width={60}
+                  height={60}
+                  className="rounded-full w-[60px] h-[60px] object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
+                  }}
+                />
+                <div>
+                  <Link
+                    href={`/shop/${data?.Shop?.id}`}
+                    className="text-lg font-medium"
+                  >
+                    {data?.Shop?.name}
+                  </Link>
+                  <span className="block mt-1">
+                    <Ratings rating={data?.Shop?.ratings} />
+                  </span>
+                  <p className="text-gray-600 mt-1 flex items-center gap-1 text-sm">
+                    <MapPin size={20} />
+                    {data?.Shop?.address || "Location Not Available"}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-md"
+                onClick={handleChat}
+              >
+                💬 Chat with Seller
+              </button>
+
+              <button className="w-full absolute cursor-pointer right-[-5px] top-[-5px] flex justify-end my-2 mt-[-10px]">
+                <X size={25} onClick={() => setOpen(false)} />
+              </button>
+            </div>
+
+            <h3 className="text-xl font-semibold mt-3">{data?.title}</h3>
+            <p className="mt-2 text-gray-700 whitespace-pre-wrap w-full">
+              {data?.short_description}
+            </p>
+
+            {data?.brand && (
+              <p className="mt-2">
+                <strong>Brand:</strong> {data.brand}
+              </p>
+            )}
+
+            <div className="flex flex-col md:flex-row items-start gap-5 mt-4">
+              {data?.colors?.length > 0 && (
+                <div>
+                  <strong>Color:</strong>
+                  <div className="flex gap-2 mt-1">
+                    {data.colors.map((color: string, index: number) => (
+                      <button
+                        key={index}
+                        className={`w-8 h-8 cursor-pointer rounded-full border-2 transition ${
+                          isSelected === color
+                            ? "border-gray-400 scale-110 shadow-md"
+                            : "border-transparent"
+                        }`}
+                        onClick={() => setIsSelected(color)}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data?.sizes?.length > 0 && (
+                <div>
+                  <strong>Size:</strong>
+                  <div className="flex gap-2 mt-1">
+                    {data.sizes.map((size: string, index: number) => (
+                      <button
+                        key={index}
+                        className={`px-4 py-1 cursor-pointer rounded-md transition ${
+                          isSizeSelected === size
+                            ? "bg-gray-800 text-white"
+                            : "bg-gray-300 text-black"
+                        }`}
+                        onClick={() => setIsSizeSelected(size)}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex items-center gap-4">
+              <h3 className="text-2xl font-semibold text-gray-900">
+                ${data?.sale_price}
+              </h3>
+              {data?.regular_price && (
+                <h3 className="text-lg text-red-600 line-through">
+                  ${data.regular_price}
+                </h3>
+              )}
+            </div>
+
+            <div className="mt-5 flex items-center gap-5">
+              <div className="flex items-center rounded-md">
+                <button
+                  className="px-3 cursor-pointer py-1 bg-gray-300 hover:bg-gray-400 text-black font-semibold rounded-l-md"
+                  onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                >
+                  -
+                </button>
+                <span className="px-4 bg-gray-100 py-1">{quantity}</span>
+                <button
+                  className="px-3 py-1 cursor-pointer bg-gray-300 hover:bg-gray-400 text-black font-semibold rounded-r-md"
+                  onClick={() => setQuantity((prev) => prev + 1)}
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                disabled={isInCart}
+                onClick={handleAddToCart}
+                className={`flex items-center gap-2 px-4 py-2 text-white font-medium rounded-lg transition ${
+                  isInCart
+                    ? "bg-green-600 cursor-not-allowed"
+                    : "bg-[#ff5722] hover:bg-[#e64a19] cursor-pointer"
+                }`}
+              >
+                <CartIcon size={18} />
+                {isInCart ? "Added to Cart" : "Add to Cart"}
+              </button>
+
+              <button className="opacity-[.7] cursor-pointer">
+                <Heart
+                  size={30}
+                  fill={isWishlisted ? "red" : "transparent"}
+                  color={isWishlisted ? "transparent" : "black"}
+                  onClick={() =>
+                    isWishlisted
+                      ? removeFromWishlist(data.id, user, location, deviceInfo)
+                      : addToWishlist(
+                          {
+                            ...data,
+                            quantity,
+                            selectedOptions: {
+                              color: isSelected,
+                              size: isSizeSelected,
+                            },
+                          },
+                          user,
+                          location,
+                          deviceInfo
+                        )
+                  }
+                />
+              </button>
+            </div>
+
+            <div className="mt-3">
+              {data.stock > 0 ? (
+                <span className="text-green-600 font-semibold">In Stock</span>
+              ) : (
+                <span className="text-red-600 font-semibold">Out of Stock</span>
+              )}
+            </div>
+            <div className="mt-3 text-gray-600 text-sm">
+              Estimated Delivery:{" "}
+              <strong>{estimatedDelivery.toDateString()}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductDetailsCard;
