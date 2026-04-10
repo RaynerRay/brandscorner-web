@@ -264,6 +264,8 @@ export const getAllSellers = async (
           name: true,
           email: true,
           createdAt: true,
+          isVerified: true,
+          verifiedAt: true,
           shop: {
             select: {
               name: true,
@@ -271,7 +273,7 @@ export const getAllSellers = async (
               address: true,
             },
           },
-        },
+        } as any,
       }),
       prisma.sellers.count(),
     ]);
@@ -287,6 +289,54 @@ export const getAllSellers = async (
         totalPages,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifySeller = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { sellerId } = req.params;
+    if (!sellerId) {
+      return next(new ValidationError("Seller ID is required"));
+    }
+
+    const updated = await prisma.sellers.update({
+      where: { id: sellerId },
+      data: {
+        isVerified: true,
+        verifiedAt: new Date(),
+        verifiedBy: req.user?.id,
+      } as any,
+    });
+
+    return res.status(200).json({ success: true, seller: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const unverifySeller = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { sellerId } = req.params;
+    if (!sellerId) {
+      return next(new ValidationError("Seller ID is required"));
+    }
+
+    const updated = await prisma.sellers.update({
+      where: { id: sellerId },
+      data: {
+        isVerified: false,
+        verifiedAt: null,
+        verifiedBy: null,
+      } as any,
+    });
+
+    return res.status(200).json({ success: true, seller: updated });
   } catch (error) {
     next(error);
   }

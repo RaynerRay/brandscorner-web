@@ -11,6 +11,8 @@ import {
   getAllSellers,
   getAllUsers,
   getUserNotifications,
+  unverifySeller,
+  verifySeller,
 } from "../controllers/admin.controller";
 
 const router: Router = express.Router();
@@ -21,6 +23,13 @@ router.get("/get-all-admins", isAuthenticated, isAdmin, getAllAdmins);
 router.put("/add-new-admin", isAuthenticated, isAdmin, addNewAdmin);
 router.get("/get-all-users", isAuthenticated, isAdmin, getAllUsers);
 router.get("/get-all-sellers", isAuthenticated, isAdmin, getAllSellers);
+router.patch("/verify-seller/:sellerId", isAuthenticated, isAdmin, verifySeller);
+router.patch(
+  "/unverify-seller/:sellerId",
+  isAuthenticated,
+  isAdmin,
+  unverifySeller
+);
 router.get("/get-all", getAllCustomizations);
 router.get(
   "/get-all-notifications",

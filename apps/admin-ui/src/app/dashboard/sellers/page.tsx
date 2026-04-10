@@ -10,7 +10,12 @@ import {
   getFilteredRowModel,
 } from "@tanstack/react-table";
 import { Search, Download } from "lucide-react";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  UseQueryResult,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { saveAs } from "file-saver";
 import Image from "next/image";
 import axiosInstance from "apps/admin-ui/src/utils/axiosInstance";
@@ -21,10 +26,12 @@ interface Seller {
   name: string;
   email: string;
   createdAt: string;
+  isVerified: boolean;
+  verifiedAt?: string | null;
   shop: {
-    name: string;
-    avatar: string;
-    address: string;
+    name?: string;
+    avatar?: string;
+    address?: string;
   };
 }
 
@@ -40,8 +47,10 @@ interface SellersResponse {
 const SellersPage = () => {
   const [globalFilter, setGlobalFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [actionError, setActionError] = useState<string | null>(null);
   const deferredGlobalFilter = useDeferredValue(globalFilter);
   const limit = 10;
+  const queryClient = useQueryClient();
 
   const { data, isLoading }: UseQueryResult<SellersResponse, Error> = useQuery({
     queryKey: ["sellers-list", page],
@@ -69,6 +78,30 @@ const SellersPage = () => {
   }, [allSellers, deferredGlobalFilter]);
 
   const totalPages = Math.ceil((data?.meta?.totalSellers ?? 0) / limit);
+
+  const verificationMutation = useMutation({
+    mutationFn: async ({
+      sellerId,
+      shouldVerify,
+    }: {
+      sellerId: string;
+      shouldVerify: boolean;
+    }) => {
+      const endpoint = shouldVerify
+        ? `/admin/api/verify-seller/${sellerId}`
+        : `/admin/api/unverify-seller/${sellerId}`;
+      return axiosInstance.patch(endpoint);
+    },
+    onMutate: () => {
+      setActionError(null);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sellers-list"] });
+    },
+    onError: () => {
+      setActionError("Failed to update verification status. Please try again.");
+    },
+  });
 
   const columns = useMemo(
     () => [
@@ -125,8 +158,53 @@ const SellersPage = () => {
           </span>
         ),
       },
+      {
+        id: "verification",
+        header: "Verification",
+        cell: ({ row }: any) => {
+          const seller = row.original as Seller;
+          const isBusy =
+            verificationMutation.isPending &&
+            verificationMutation.variables?.sellerId === seller.id;
+
+          return (
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  seller.isVerified
+                    ? "bg-green-900 text-green-300"
+                    : "bg-yellow-900 text-yellow-300"
+                }`}
+              >
+                {seller.isVerified ? "Verified" : "Pending"}
+              </span>
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() =>
+                  verificationMutation.mutate({
+                    sellerId: seller.id,
+                    shouldVerify: !seller.isVerified,
+                  })
+                }
+                className={`px-2 py-1 rounded text-xs font-medium ${
+                  seller.isVerified
+                    ? "bg-red-700 hover:bg-red-800"
+                    : "bg-blue-600 hover:bg-blue-700"
+                } text-white disabled:opacity-50`}
+              >
+                {isBusy
+                  ? "Updating..."
+                  : seller.isVerified
+                  ? "Unverify"
+                  : "Verify"}
+              </button>
+            </div>
+          );
+        },
+      },
     ],
-    []
+    [verificationMutation]
   );
 
   const table = useReactTable({
@@ -179,6 +257,9 @@ const SellersPage = () => {
       </div>
 
       <div className="overflow-x-auto bg-gray-900 rounded-lg p-4">
+        {actionError ? (
+          <p className="mb-3 text-sm text-red-400">{actionError}</p>
+        ) : null}
         {isLoading ? (
           <p className="text-center text-white">Loading sellers...</p>
         ) : (
