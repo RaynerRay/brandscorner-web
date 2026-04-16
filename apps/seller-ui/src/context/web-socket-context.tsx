@@ -45,10 +45,8 @@ export const WebSocketProvider = ({
     };
   }, [seller?.id]);
 
-  if (!wsReady) return null;
-
   return (
-    <WebSocketContext.Provider value={{ ws: wsRef.current, unreadCounts }}>
+    <WebSocketContext.Provider value={{ ws: wsReady ? wsRef.current : null, unreadCounts }}>
       {children}
     </WebSocketContext.Provider>
   );
