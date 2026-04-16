@@ -28,7 +28,7 @@ import { sendLog } from "@packages/utils/logs/send-logs";
 export const userRegistration = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     validateRegistrationData(req.body, "user");
@@ -62,7 +62,7 @@ export const userRegistration = async (
 export const verifyUser = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { email, otp, password, name } = req.body;
@@ -109,7 +109,7 @@ export const verifyUser = async (
 export const loginUser = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { email, password } = req.body;
@@ -148,7 +148,7 @@ export const loginUser = async (
       process.env.ACCESS_TOKEN_SECRET as string,
       {
         expiresIn: "15m",
-      }
+      },
     );
 
     const refreshToken = jwt.sign(
@@ -156,7 +156,7 @@ export const loginUser = async (
       process.env.REFRESH_TOKEN_SECRET as string,
       {
         expiresIn: "7d",
-      }
+      },
     );
 
     // store the refresh and access token in an httpOnly secure cookie
@@ -186,7 +186,7 @@ export const logOutUser = async (req: any, res: Response) => {
 export const updateUserPassword = async (
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const userId = req.user?.id;
@@ -203,8 +203,8 @@ export const updateUserPassword = async (
     if (currentPassword === newPassword) {
       return next(
         new ValidationError(
-          "New password cannot be the same as the current password"
-        )
+          "New password cannot be the same as the current password",
+        ),
       );
     }
 
@@ -218,7 +218,7 @@ export const updateUserPassword = async (
 
     const isPasswordCorrect = await bcrypt.compare(
       currentPassword,
-      user.password
+      user.password,
     );
     if (!isPasswordCorrect) {
       return next(new AuthError("current password is incorrect"));
@@ -241,7 +241,7 @@ export const updateUserPassword = async (
 export const loginAdmin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { email, password } = req.body;
@@ -286,7 +286,7 @@ export const loginAdmin = async (
       process.env.ACCESS_TOKEN_SECRET as string,
       {
         expiresIn: "15m",
-      }
+      },
     );
 
     const refreshToken = jwt.sign(
@@ -294,7 +294,7 @@ export const loginAdmin = async (
       process.env.REFRESH_TOKEN_SECRET as string,
       {
         expiresIn: "7d",
-      }
+      },
     );
 
     // store the refresh and access token in an httpOnly secure cookie
@@ -314,7 +314,7 @@ export const loginAdmin = async (
 export const refreshToken = async (
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const refreshToken =
@@ -328,7 +328,7 @@ export const refreshToken = async (
 
     const decoded = jwt.verify(
       refreshToken,
-      process.env.REFRESH_TOKEN_SECRET as string
+      process.env.REFRESH_TOKEN_SECRET as string,
     ) as { id: string; role: string };
 
     if (!decoded || !decoded.id || !decoded.role) {
@@ -352,7 +352,7 @@ export const refreshToken = async (
     const newAccessToken = jwt.sign(
       { id: decoded.id, role: decoded.role },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "15m" }
+      { expiresIn: "15m" },
     );
 
     if (decoded.role === "user" || decoded.role === "admin") {
@@ -412,7 +412,7 @@ export const getAdmin = async (req: any, res: Response, next: NextFunction) => {
 export const userForgotPassword = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   await handleForgotPassword(req, res, next, "user");
 };
@@ -421,7 +421,7 @@ export const userForgotPassword = async (
 export const verifyUserForgotPassword = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   await verifyForgotPasswordOtp(req, res, next);
 };
@@ -430,7 +430,7 @@ export const verifyUserForgotPassword = async (
 export const resetUserPassword = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { email, newPassword } = req.body;
@@ -447,8 +447,8 @@ export const resetUserPassword = async (
     if (isSamePassword) {
       return next(
         new ValidationError(
-          "New password cannot be the same as the old password!"
-        )
+          "New password cannot be the same as the old password!",
+        ),
       );
     }
 
@@ -470,7 +470,7 @@ export const resetUserPassword = async (
 export const registerSeller = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     validateRegistrationData(req.body, "seller");
@@ -500,7 +500,7 @@ export const registerSeller = async (
 export const verifySeller = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { email, otp, password, name, phone_number, country } = req.body;
@@ -515,7 +515,7 @@ export const verifySeller = async (
 
     if (existingSeller)
       return next(
-        new ValidationError("Seller already exists with this email!")
+        new ValidationError("Seller already exists with this email!"),
       );
 
     await verifyOtp(email, otp, next);
@@ -543,7 +543,7 @@ export const verifySeller = async (
 export const createShop = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { name, bio, address, opening_hours, website, category, sellerId } =
@@ -636,7 +636,7 @@ export const createShop = async (
 export const loginSeller = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { email, password } = req.body;
@@ -655,25 +655,32 @@ export const loginSeller = async (
     res.clearCookie("access_token");
     res.clearCookie("refresh_token");
 
-    // Generate access and refresh tokens
-    const accessToken = jwt.sign(
-      { id: seller.id, role: "seller" },
-      process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "15m" }
-    );
-    const refreshToken = jwt.sign(
-      { id: seller.id, role: "seller" },
-      process.env.REFRESH_TOKEN_SECRET as string,
-      { expiresIn: "7d" }
-    );
+    if (seller.isVerified) {
+      // Generate access and refresh tokens
+      const accessToken = jwt.sign(
+        { id: seller.id, role: "seller" },
+        process.env.ACCESS_TOKEN_SECRET as string,
+        { expiresIn: "15m" },
+      );
+      const refreshToken = jwt.sign(
+        { id: seller.id, role: "seller" },
+        process.env.REFRESH_TOKEN_SECRET as string,
+        { expiresIn: "7d" },
+      );
 
-    // store refresh token and access token
-    setCookie(res, "seller-refresh-token", refreshToken);
-    setCookie(res, "seller-access-token", accessToken);
+      // store refresh token and access token
+      setCookie(res, "seller-refresh-token", refreshToken);
+      setCookie(res, "seller-access-token", accessToken);
+    }
 
     res.status(200).json({
       message: "Login successful!",
-      seller: { id: seller.id, email: seller.email, name: seller.name },
+      seller: {
+        id: seller.id,
+        email: seller.email,
+        name: seller.name,
+        isVerified: seller.isVerified,
+      },
     });
   } catch (error) {
     next(error);
@@ -694,7 +701,7 @@ export const logOutSeller = async (req: any, res: Response) => {
 export const getSeller = async (
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const seller = req.seller;
@@ -722,7 +729,7 @@ export const logOutAdmin = async (req: any, res: Response) => {
 export const addUserAddress = async (
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const userId = req.user?.id;
@@ -770,7 +777,7 @@ export const addUserAddress = async (
 export const deleteUserAddress = async (
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const userId = req.user?.id;
@@ -810,7 +817,7 @@ export const deleteUserAddress = async (
 export const getUserAddresses = async (
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const userId = req.user?.id;
@@ -833,12 +840,11 @@ export const getUserAddresses = async (
   }
 };
 
-
 // fetch layout data
 export const getLayoutData = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const layout = await prisma.site_config.findFirst();

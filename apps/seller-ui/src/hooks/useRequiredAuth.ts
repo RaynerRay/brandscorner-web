@@ -10,9 +10,6 @@ const useRequireAuth = () => {
     if (!isLoading && !seller) {
       router.replace("/login");
     }
-    if (!isLoading && seller && seller?.isVerified !== true) {
-      router.replace("/pending-verification");
-    }
   }, [seller, isLoading, router]);
 
   return { seller, isLoading };

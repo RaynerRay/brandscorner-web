@@ -2,7 +2,6 @@ import { useMutation } from "@tanstack/react-query";
 import { shopCategories } from "apps/seller-ui/src/utils/categories";
 import axios from "axios";
 import React from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 const CreateShop = ({
@@ -18,7 +17,6 @@ const CreateShop = ({
     formState: { errors },
   } = useForm();
 
-  const router = useRouter();
   const shopCreateMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const response = await axios.post(
@@ -30,9 +28,6 @@ const CreateShop = ({
     },
     onSuccess: () => {
       setActiveStep(3);
-      setTimeout(() => {
-        router.push("/login"); // or "/dashboard"
-      }, 2000);
     },
   });
 

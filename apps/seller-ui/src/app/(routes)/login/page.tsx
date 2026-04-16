@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "apps/seller-ui/src/store/authStore";
+import PendingVerification from "apps/seller-ui/src/shared/modules/auth/pending-verification";
 import axios, { AxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -20,6 +21,7 @@ const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
   const router = useRouter();
 
   const {
@@ -33,12 +35,16 @@ const Login = () => {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/login-seller`,
         data,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return response.data;
     },
     onSuccess: (data) => {
       setServerError(null);
+      if (!data?.seller?.isVerified) {
+        setPendingVerification(true);
+        return;
+      }
       setLoggedIn(true);
       queryClient.invalidateQueries({ queryKey: ["seller"] });
       router.push("/");
@@ -54,6 +60,10 @@ const Login = () => {
   const onSubmit = (data: FormData) => {
     loginMutation.mutate(data);
   };
+
+  if (pendingVerification) {
+    return <PendingVerification />;
+  }
 
   return (
     <div className="w-full py-10 min-h-screen bg-[#f1f1f1]">

@@ -46,24 +46,28 @@ pnpm install
 Create `.env` files in the following locations:
 
 #### Root Directory (`.env`)
+
 ```bash
 # Copy from .env.example if available, or create new
 touch .env
 ```
 
 #### User UI (`.env`)
+
 ```bash
 cd apps/user-ui
 touch .env
 ```
 
 #### Seller UI (`.env`)
+
 ```bash
 cd apps/seller-ui
 touch .env
 ```
 
 #### Admin UI (`.env`)
+
 ```bash
 cd apps/admin-ui
 touch .env
@@ -74,6 +78,7 @@ touch .env
 Fill in your `.env` files with the following variables:
 
 #### Root `.env` (Backend Services)
+
 ```env
 # Database
 DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/eshop-db"
@@ -106,9 +111,11 @@ KAFKA_BROKERS=localhost:9092
 ```
 
 #### UI `.env` files (Frontend Apps)
+
 ```env
 # API Gateway URL
 NEXT_PUBLIC_API_URL="http://localhost:8080"
+NEXT_PUBLIC_SERVER_URI="http://localhost:8080"
 ```
 
 ### 4. Database Setup
@@ -136,7 +143,7 @@ npm run dev
 
 # In separate terminals, start the frontend apps:
 npm run user-ui    # Runs on http://localhost:3000
-npm run seller-ui  # Runs on http://localhost:3001  
+npm run seller-ui  # Runs on http://localhost:3001
 npm run admin-ui   # Runs on http://localhost:3002
 ```
 
@@ -144,18 +151,19 @@ npm run admin-ui   # Runs on http://localhost:3002
 
 Once everything is running:
 
-| Application | URL | Description |
-|-------------|-----|-------------|
-| **User Frontend** | http://localhost:3000 | Main customer-facing app |
+| Application          | URL                   | Description                 |
+| -------------------- | --------------------- | --------------------------- |
+| **User Frontend**    | http://localhost:3000 | Main customer-facing app    |
 | **Seller Dashboard** | http://localhost:3001 | Seller management interface |
-| **Admin Panel** | http://localhost:3002 | Admin control center |
-| **API Gateway** | http://localhost:8080 | Backend API endpoint |
+| **Admin Panel**      | http://localhost:3002 | Admin control center        |
+| **API Gateway**      | http://localhost:8080 | Backend API endpoint        |
 
 ## 🔧 Troubleshooting
 
 ### Common Issues
 
 **Port already in use:**
+
 ```bash
 # Check what's using the port
 lsof -i :3000
@@ -163,6 +171,7 @@ lsof -i :3000
 ```
 
 **Kafka not starting:**
+
 ```bash
 # Check Docker Desktop is running
 # Restart Kafka
@@ -171,11 +180,13 @@ npm run kafka:dev:up
 ```
 
 **Environment variables not loading:**
+
 - Ensure `.env` files are in the correct locations
 - Restart services after changing `.env` files
 - Check for typos in variable names
 
 **Database connection issues:**
+
 ```bash
 # Test database connection
 npx prisma db push
@@ -229,6 +240,7 @@ eshop/
 ## 📞 Need Help?
 
 If you encounter issues:
+
 1. Check the troubleshooting section above
 2. Ensure all prerequisites are installed
 3. Verify your environment variables are correct
@@ -236,4 +248,4 @@ If you encounter issues:
 
 ---
 
-**Happy coding! 🚀** 
+**Happy coding! 🚀**

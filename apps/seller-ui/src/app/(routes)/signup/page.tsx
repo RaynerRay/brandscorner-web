@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import axios, { AxiosError } from "axios";
 import { countries } from "apps/seller-ui/src/utils/countires";
 import CreateShop from "apps/seller-ui/src/shared/modules/auth/create-shop";
+import PendingVerification from "apps/seller-ui/src/shared/modules/auth/pending-verification";
 // import StripeLogo from "apps/seller-ui/src/assets/svgs/stripe-logo";
 
 const Signup = () => {
@@ -120,6 +121,10 @@ const Signup = () => {
   //     console.error("Stripe Connection Error:", error);
   //   }
   // };
+
+  if (activeStep === 3) {
+    return <PendingVerification />;
+  }
 
   return (
     <div className="w-full bg-[#f1f1f1] flex flex-col items-center pt-10 min-h-screen">
@@ -354,13 +359,6 @@ const Signup = () => {
             </button>
           </div>
         )} */}
-        {activeStep === 3 && (
-  <div className="text-center">
-    <h3 className="text-2xl font-semibold">Registration Complete</h3>
-    <br />
-    <p>Your seller account has been created successfully.</p>
-  </div>
-)}
       </div>
     </div>
   );
