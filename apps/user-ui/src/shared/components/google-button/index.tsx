@@ -1,9 +1,16 @@
 import React from "react";
 
 const GoogleButton = () => {
+  const handleGoogleLogin = () => {
+    window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/google`;
+  };
+
   return (
     <div className="w-full flex justify-center">
-      <div className="h-[46px] cursor-pointer border border-blue-100 flex items-center gap-2 px-3 rounded-[4px] my-2 bg-[rgba(210,227,252,0.3)]">
+      <div
+        onClick={handleGoogleLogin}
+        className="h-[46px] cursor-pointer border border-blue-100 flex items-center gap-2 px-3 rounded-[4px] my-2 bg-[rgba(210,227,252,0.3)]"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           x="0px"

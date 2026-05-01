@@ -25,10 +25,32 @@ import {
   verifyUser,
   verifyUserForgotPassword,
 } from "../controller/auth.controller";
+import { googleCallback } from "../controller/google.auth.controller";
+import passport from "../utils/google.auth.strategy";
 import isAuthenticated from "@packages/middleware/isAuthenticated";
 import { isAdmin, isSeller } from "@packages/middleware/authorizeRoles";
 
 const router: Router = express.Router();
+
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["openid", "email", "profile"], session: false })
+);
+
+router.get(
+  "/google/callback",
+  (req, res, next) => {
+    passport.authenticate("google", { session: false }, (err: any, user: any) => {
+      if (err || !user) {
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+      }
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
+  googleCallback
+);
 
 router.post("/user-registration", userRegistration);
 router.post("/verify-user", verifyUser);

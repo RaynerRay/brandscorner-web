@@ -23,7 +23,7 @@ export const WebSocketProvider = ({
   useEffect(() => {
     if (!user?.id) return;
 
-    const ws = new WebSocket(process.env.NEXT_PUBLIC_CHATTING_WEBSOCKET_URI || "wss://shondhane.com/ws-chatting");
+    const ws = new WebSocket(process.env.NEXT_PUBLIC_CHATTING_WEBSOCKET_URI || "ws://localhost:6006");
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -45,10 +45,8 @@ export const WebSocketProvider = ({
     };
   }, [user?.id]);
 
-  if (!wsReady) return null;
-
   return (
-    <WebSocketContext.Provider value={{ ws: wsRef.current, unreadCounts }}>
+    <WebSocketContext.Provider value={{ ws: wsReady ? wsRef.current : null, unreadCounts }}>
       {children}
     </WebSocketContext.Provider>
   );

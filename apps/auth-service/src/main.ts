@@ -4,11 +4,13 @@ import { errorMiddleware } from "@packages/error-handler/error-middleware";
 import cookieParser from "cookie-parser";
 import router from "./routes/auth.router";
 import swaggerUi from "swagger-ui-express";
+import passport from "./utils/google.auth.strategy";
 const swaggerDocument = require("./swagger-output.json");
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+app.use(passport.initialize());
 
 app.get("/", (req, res) => {
   res.send({ message: "Hello API" });
