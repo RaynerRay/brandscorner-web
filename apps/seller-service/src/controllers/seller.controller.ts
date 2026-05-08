@@ -560,3 +560,20 @@ export const markNotificationAsRead = async (
     next(error);
   }
 };
+
+// get count of shops the current user follows
+export const getUserFollowingCount = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const count = await prisma.followers.count({
+      where: { userId: req.user?.id },
+    });
+
+    res.status(200).json({ success: true, count });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -8,6 +8,7 @@ import {
   getSellerEvents,
   getSellerInfo,
   getSellerProducts,
+  getUserFollowingCount,
   isFollowing,
   markNotificationAsRead,
   restoreShop,
@@ -42,5 +43,7 @@ router.post(
   isSeller,
   markNotificationAsRead
 );
+
+router.get("/user-following-count", isAuthenticated, getUserFollowingCount);
 
 export default router;
