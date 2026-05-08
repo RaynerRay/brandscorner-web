@@ -166,6 +166,9 @@ export const loginUser = async (
     res.status(200).json({
       message: "Login successful!",
       user: { id: user.id, email: user.email, name: user.name },
+      // also returned in body so mobile clients (React Native) can store them
+      accessToken,
+      refreshToken,
     });
   } catch (error) {
     return next(error);
@@ -363,7 +366,7 @@ export const refreshToken = async (
 
     req.role = decoded.role;
 
-    return res.status(201).json({ success: true });
+    return res.status(201).json({ success: true, accessToken: newAccessToken });
   } catch (error) {
     next(error);
   }

@@ -25,7 +25,7 @@ import {
   verifyUser,
   verifyUserForgotPassword,
 } from "../controller/auth.controller";
-import { googleCallback } from "../controller/google.auth.controller";
+import { googleCallback, googleMobileLogin } from "../controller/google.auth.controller";
 import passport from "../utils/google.auth.strategy";
 import isAuthenticated from "@packages/middleware/isAuthenticated";
 import { isAdmin, isSeller } from "@packages/middleware/authorizeRoles";
@@ -52,6 +52,7 @@ router.get(
   googleCallback
 );
 
+router.post("/google-mobile-login", googleMobileLogin);
 router.post("/user-registration", userRegistration);
 router.post("/verify-user", verifyUser);
 router.post("/login-user", loginUser);
