@@ -215,16 +215,6 @@
         }
       }
     },
-    "/get-stripe-account": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/get-all-products": {
       "get": {
         "description": "",

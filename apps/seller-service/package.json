@@ -20,7 +20,6 @@
     "nodemailer": "^6.9.8",
     "path": "^0.12.7",
     "swagger-autogen": "^2.2.1",
-    "stripe": "^12.6.0",
     "tslib": "^2.6.0",
     "ioredis": "^5.3.2",
     "@eshop/error-handler": "workspace:*",

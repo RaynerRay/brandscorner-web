@@ -15,6 +15,7 @@ export const createOrder = async (
       cart,
       status,
       paymentMethod,
+      echocashPhone,
       fulfillmentType,
       shippingAddressId,
       estimatedDeliveryFee,
@@ -47,8 +48,11 @@ export const createOrder = async (
     if (!fulfillmentType || !["delivery", "collection"].includes(fulfillmentType)) {
       return next(new ValidationError("fulfillmentType must be 'delivery' or 'collection'."));
     }
-    if (!paymentMethod || !["cash_on_delivery", "mobile_payment"].includes(paymentMethod)) {
-      return next(new ValidationError("paymentMethod must be 'cash_on_delivery' or 'mobile_payment'."));
+    if (!paymentMethod || !["cash_on_delivery", "echocash"].includes(paymentMethod)) {
+      return next(new ValidationError("paymentMethod must be 'cash_on_delivery' or 'echocash'."));
+    }
+    if (paymentMethod === "echocash" && !echocashPhone) {
+      return next(new ValidationError("echocashPhone is required for EchoCash payments."));
     }
     if (fulfillmentType === "delivery" && !shippingAddressId) {
       return next(new ValidationError("shippingAddressId is required for delivery orders."));
@@ -107,6 +111,7 @@ export const createOrder = async (
           total: orderTotal + deliveryFee,
           status: status || "pending",
           paymentMethod,
+          echocashPhone: paymentMethod === "echocash" ? echocashPhone : null,
           fulfillmentType,
           // Delivery fields
           shippingAddressId: fulfillmentType === "delivery" ? shippingAddressId : null,
@@ -304,12 +309,49 @@ export const updateDeliveryStatus = async (
     const existing = await prisma.orders.findUnique({ where: { id: orderId } });
     if (!existing) return next(new NotFoundError("Order not found."));
 
+    const updateData: Prisma.ordersUpdateInput = { deliveryStatus, updatedAt: new Date() };
+    if (deliveryStatus === "Delivered") {
+      updateData.paymentStatus = "success";
+    }
+
     const order = await prisma.orders.update({
       where: { id: orderId },
-      data: { deliveryStatus, updatedAt: new Date() },
+      data: updateData,
     });
 
     return res.status(200).json({ success: true, message: "Delivery status updated.", order });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// ─── Update Payment Status (echocash only, manual) ───────────────────────────
+export const updatePaymentStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId } = req.params;
+    const { paymentStatus } = req.body;
+
+    const allowed = ["pending", "success", "failed"];
+    if (!paymentStatus || !allowed.includes(paymentStatus)) {
+      return next(new ValidationError(`paymentStatus must be one of: ${allowed.join(", ")}`));
+    }
+
+    const existing = await prisma.orders.findUnique({ where: { id: orderId } });
+    if (!existing) return next(new NotFoundError("Order not found."));
+    if (existing.paymentMethod !== "echocash") {
+      return next(new ValidationError("Manual payment status update is only allowed for EchoCash orders."));
+    }
+
+    const order = await prisma.orders.update({
+      where: { id: orderId },
+      data: { paymentStatus, updatedAt: new Date() },
+    });
+
+    return res.status(200).json({ success: true, message: "Payment status updated.", order });
   } catch (error) {
     return next(error);
   }

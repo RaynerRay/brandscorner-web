@@ -234,6 +234,10 @@ model orders {
   // Collection
   collectionPoint      Json?
 
+  // Payment
+  paymentStatus        String       @default("pending")
+  echocashPhone        String?
+
   // Coupon
   couponCode           String?
   discountAmount       Float        @default(0)

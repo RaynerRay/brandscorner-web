@@ -8,6 +8,7 @@ import {
   getSellerOrders,
   getUserOrders,
   updateDeliveryStatus,
+  updatePaymentStatus,
   verifyCouponCode,
 } from "../controllers/order.controller";
 import { isAdmin, isSeller, isSellerOrAdmin } from "@packages/middleware/authorizeRoles";
@@ -19,6 +20,7 @@ router.patch("/confirm-order/:orderId", isAuthenticated, isSellerOrAdmin, confir
 router.get("/get-seller-orders", isAuthenticated, isSeller, getSellerOrders);
 router.get("/get-order-details/:id", isAuthenticated, getOrderDetails);
 router.put("/update-status/:orderId", isAuthenticated, isSeller, updateDeliveryStatus);
+router.put("/update-payment-status/:orderId", isAuthenticated, isSeller, updatePaymentStatus);
 router.put("/verify-coupon", isAuthenticated, verifyCouponCode);
 router.get("/get-user-orders", isAuthenticated, getUserOrders);
 router.get("/get-admin-orders", isAuthenticated, isAdmin, getAdminOrders);

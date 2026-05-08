@@ -145,7 +145,7 @@ function getHarareEstimate(rangeIndex: number): number {
 // ─── WhatsApp Checkout Modal ─────────────────────────────────────────────────
 
 type FulfillmentType = "delivery" | "collection";
-type PaymentMethod = "cash_on_delivery" | "mobile_payment";
+type PaymentMethod = "cash_on_delivery" | "echocash";
 
 type ModalProps = {
   cart: any[];
@@ -173,6 +173,7 @@ const WhatsAppCheckoutModal = ({
   const [fulfillment, setFulfillment] = useState<FulfillmentType>("delivery");
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethod>("cash_on_delivery");
+  const [echocashPhone, setEchocashPhone] = useState("");
   const [selectedPoint, setSelectedPoint] = useState(COLLECTION_POINTS[0].id);
   const [harareRangeIndex, setHarareRangeIndex] = useState(0);
   const [sent, setSent] = useState(false);
@@ -259,9 +260,12 @@ const WhatsAppCheckoutModal = ({
     }
 
     lines.push("━━━━━━━━━━━━━━━━━━━━━");
-    lines.push(
-      `💳 *Payment:* ${paymentMethod === "cash_on_delivery" ? "Cash on Delivery 💵" : "Mobile Payment 📱"}`,
-    );
+    if (paymentMethod === "echocash") {
+      lines.push(`💳 *Payment:* EchoCash 📱`);
+      lines.push(`   EchoCash number: *${echocashPhone}*`);
+    } else {
+      lines.push(`💳 *Payment:* Cash on Delivery 💵`);
+    }
     lines.push("━━━━━━━━━━━━━━━━━━━━━");
     lines.push("Please confirm my order. Thank you! 🙏");
     return lines.join("\n");
@@ -270,6 +274,10 @@ const WhatsAppCheckoutModal = ({
   const handleSendOrder = async () => {
     if (fulfillment === "delivery" && !selectedAddress) {
       toast.error("Please select a delivery address first.");
+      return;
+    }
+    if (paymentMethod === "echocash" && !echocashPhone.trim()) {
+      toast.error("Please enter your EchoCash account phone number.");
       return;
     }
 
@@ -284,6 +292,7 @@ const WhatsAppCheckoutModal = ({
         cart,
         status: "pending",
         paymentMethod,
+        ...(paymentMethod === "echocash" && { echocashPhone: echocashPhone.trim() }),
         fulfillmentType: fulfillment,
         ...(fulfillment === "delivery" && {
           shippingAddressId: selectedAddress?.id,
@@ -588,9 +597,9 @@ const WhatsAppCheckoutModal = ({
                       label: "Cash on Delivery",
                     },
                     {
-                      value: "mobile_payment",
+                      value: "echocash",
                       emoji: "📱",
-                      label: "Mobile Payment",
+                      label: "EchoCash",
                     },
                   ].map((opt) => (
                     <div
@@ -607,6 +616,20 @@ const WhatsAppCheckoutModal = ({
                     </div>
                   ))}
                 </div>
+                {paymentMethod === "echocash" && (
+                  <div className="mt-3">
+                    <label className="text-xs font-medium text-gray-600 block mb-1">
+                      EchoCash account phone number
+                    </label>
+                    <input
+                      type="tel"
+                      value={echocashPhone}
+                      onChange={(e) => setEchocashPhone(e.target.value)}
+                      placeholder="e.g. 0771234567"
+                      className="w-full text-sm p-2.5 border-2 border-blue-200 rounded-xl focus:outline-none focus:border-blue-500 bg-blue-50"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

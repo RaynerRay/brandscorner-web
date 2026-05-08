@@ -53,7 +53,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_SERVER_URI=https://shondhane.com
 ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://shondhane.com/ws-chatting
 ENV NEXT_PUBLIC_SELLER_SERVER_URI=https://sellers.shondhane.com
-ENV NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51Ox7STKfWK4AoG4YmNVlSSToDlYzvr8TGe2d36vzYt5iYQ4JViRC976MOF9A2uXU2wzJt4T2IN5NXscnmpGlXlAz00whmGYvmP
 
 # Generate Prisma client before building
 RUN npx prisma generate

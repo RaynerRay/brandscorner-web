@@ -9,7 +9,6 @@ import axios, { AxiosError } from "axios";
 import { countries } from "apps/seller-ui/src/utils/countires";
 import CreateShop from "apps/seller-ui/src/shared/modules/auth/create-shop";
 import PendingVerification from "apps/seller-ui/src/shared/modules/auth/pending-verification";
-// import StripeLogo from "apps/seller-ui/src/assets/svgs/stripe-logo";
 
 const Signup = () => {
   const [activeStep, setActiveStep] = useState(1);
@@ -106,21 +105,6 @@ const Signup = () => {
       signupMutation.mutate(sellerData);
     }
   };
-
-  // const connectStipe = async () => {
-  //   try {
-  //     const response = await axios.post(
-  //       `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/create-stripe-link`,
-  //       { sellerId }
-  //     );
-
-  //     if (response.data.url) {
-  //       window.location.href = response.data.url;
-  //     }
-  //   } catch (error) {
-  //     console.error("Stripe Connection Error:", error);
-  //   }
-  // };
 
   if (activeStep === 3) {
     return <PendingVerification />;
@@ -347,18 +331,7 @@ const Signup = () => {
         {activeStep === 2 && (
           <CreateShop sellerId={sellerId} setActiveStep={setActiveStep} />
         )}
-        {/* {activeStep === 3 && (
-          <div className="text-center">
-            <h3 className="text-2xl font-semibold">Withdraw Method</h3>
-            <br />
-            <button
-              className="w-full m-auto flex items-center justify-center gap-3 text-lg bg-[#334155] text-white py-2 rounded-lg"
-              onClick={connectStipe}
-            >
-              Connect Stripe <StripeLogo />
-            </button>
-          </div>
-        )} */}
+
       </div>
     </div>
   );

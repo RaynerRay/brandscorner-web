@@ -15,7 +15,6 @@ import {
   getProductAnalytics,
   getProductDetails,
   getShopProducts,
-  getStripeAccount,
   restoreProduct,
   searchProducts,
   slugValidator,
@@ -37,7 +36,6 @@ router.post("/create-product", isAuthenticated, isSellerOrAdmin, createProduct);
 router.get("/get-shop-products", isAuthenticated, getShopProducts);
 router.delete("/delete-product/:productId", isAuthenticated, isSellerOrAdmin, deleteProduct);
 router.put("/restore-product/:productId", isAuthenticated, isSellerOrAdmin, restoreProduct);
-router.get("/get-stripe-account", isAuthenticated, isSeller, getStripeAccount);
 router.get("/get-all-products", getAllProducts);
 router.get("/get-all-events", getAllEvents);
 router.get("/get-product/:slug", getProductDetails);

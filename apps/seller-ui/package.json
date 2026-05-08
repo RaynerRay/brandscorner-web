@@ -11,8 +11,6 @@
   "dependencies": {
     "@eshop/components": "workspace:*",
     "@prisma/client": "^6.11.1",
-    "@stripe/react-stripe-js": "^3.6.0",
-    "@stripe/stripe-js": "^7.0.0",
     "@tanstack/react-query": "^5.69.0",
     "@tanstack/react-table": "^8.21.3",
     "apexcharts": "^3.54.1",

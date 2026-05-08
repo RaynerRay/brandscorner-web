@@ -6,12 +6,6 @@ import {
 import { imagekit } from "@packages/libs/imagekit";
 import prisma from "@packages/libs/prisma";
 import { NextFunction, Request, Response } from "express";
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2022-11-15",
-});
-
 // get product categories
 export const getCategories = async (
   req: Request,
@@ -410,56 +404,6 @@ export const restoreProduct = async (
   }
 };
 
-// get seller stripe information
-export const getStripeAccount = async (
-  req: any,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const sellerData = await prisma.sellers.findUnique({
-      where: { id: req.seller.id },
-      select: { stripeId: true },
-    });
-
-    if (!sellerData?.stripeId) {
-      return next(new ValidationError("No Stripe account linked!"));
-    }
-
-    // Fetch Stripe account details
-    const stripeAccount = await stripe.accounts.retrieve(sellerData.stripeId);
-
-    // Fetch last payout (if available)
-    const payouts = await stripe.payouts.list(
-      { limit: 1 },
-      { stripeAccount: stripeAccount.id }
-    );
-    const lastPayout = payouts?.data.length
-      ? new Date(payouts.data[0].created * 1000).toLocaleDateString()
-      : null;
-
-    return res.status(200).json({
-      success: true,
-      stripeAccount: {
-        id: stripeAccount.id,
-        email: stripeAccount.email || "Not available",
-        business_name:
-          stripeAccount.business_profile?.name ||
-          stripeAccount.individual?.first_name +
-            " " +
-            stripeAccount.individual?.last_name ||
-          "N/A",
-        country: stripeAccount.country || "Unknown",
-        payouts_enabled: stripeAccount.payouts_enabled,
-        charges_enabled: stripeAccount.charges_enabled,
-        last_payout: lastPayout || "No payouts yet",
-        dashboard_url: `https://connect.stripe.com/app/express_dashboard/${stripeAccount.id}`,
-      },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
 
 // get All products
 export const getAllProducts = async (
