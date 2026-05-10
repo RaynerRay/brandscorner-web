@@ -5,6 +5,11 @@ import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useUser from "apps/user-ui/src/hooks/useUser";
 import { useStore } from "apps/user-ui/src/store";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
+import { getCartLineKey } from "apps/user-ui/src/utils/cartVariant";
+import {
+  hexToColorName,
+  isCssColorLiteral,
+} from "apps/user-ui/src/utils/colorDisplayName";
 import { countries } from "apps/user-ui/src/utils/countries";
 import { deliveryFees } from "apps/user-ui/src/utils/deliveryFees";
 import {
@@ -45,64 +50,6 @@ const COLLECTION_POINTS = [
     mapsUrl: "https://maps.google.com/?q=Chinhoyi+Mall+Harare",
   },
 ];
-
-// ── Hex → readable colour name ───────────────────────────────────────────────
-const NAMED_COLORS: [string, number, number, number][] = [
-  ["White", 255, 255, 255],
-  ["Black", 0, 0, 0],
-  ["Red", 255, 0, 0],
-  ["Green", 0, 128, 0],
-  ["Blue", 0, 0, 255],
-  ["Yellow", 255, 255, 0],
-  ["Orange", 255, 165, 0],
-  ["Pink", 255, 192, 203],
-  ["Hot Pink", 255, 105, 180],
-  ["Purple", 128, 0, 128],
-  ["Violet", 238, 130, 238],
-  ["Lavender", 230, 230, 250],
-  ["Brown", 165, 42, 42],
-  ["Beige", 245, 245, 220],
-  ["Cream", 255, 253, 208],
-  ["Ivory", 255, 255, 240],
-  ["Grey", 128, 128, 128],
-  ["Light Grey", 211, 211, 211],
-  ["Dark Grey", 64, 64, 64],
-  ["Silver", 192, 192, 192],
-  ["Gold", 255, 215, 0],
-  ["Navy", 0, 0, 128],
-  ["Sky Blue", 135, 206, 235],
-  ["Teal", 0, 128, 128],
-  ["Turquoise", 64, 224, 208],
-  ["Mint", 152, 255, 152],
-  ["Lime", 0, 255, 0],
-  ["Olive", 128, 128, 0],
-  ["Maroon", 128, 0, 0],
-  ["Coral", 255, 127, 80],
-  ["Salmon", 250, 128, 114],
-  ["Peach", 255, 218, 185],
-  ["Magenta", 255, 0, 255],
-  ["Cyan", 0, 255, 255],
-  ["Indigo", 75, 0, 130],
-  ["Charcoal", 54, 69, 79],
-];
-
-function hexToColorName(hex: string): string {
-  if (!hex || !hex.startsWith("#")) return hex;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return hex;
-  let best = NAMED_COLORS[0];
-  let bestDist = Infinity;
-  for (const c of NAMED_COLORS) {
-    const d = (r - c[1]) ** 2 + (g - c[2]) ** 2 + (b - c[3]) ** 2;
-    if (d < bestDist) {
-      bestDist = d;
-      best = c;
-    }
-  }
-  return best[0];
-}
 
 // ── Delivery fee helpers ─────────────────────────────────────────────────────
 function getDeliveryFeeLabel(city: string): {
@@ -292,7 +239,9 @@ const WhatsAppCheckoutModal = ({
         cart,
         status: "pending",
         paymentMethod,
-        ...(paymentMethod === "echocash" && { echocashPhone: echocashPhone.trim() }),
+        ...(paymentMethod === "echocash" && {
+          echocashPhone: echocashPhone.trim(),
+        }),
         fulfillmentType: fulfillment,
         ...(fulfillment === "delivery" && {
           shippingAddressId: selectedAddress?.id,
@@ -328,10 +277,11 @@ const WhatsAppCheckoutModal = ({
 
     // 2. Open WhatsApp with the pre-filled summary
     const msg = encodeURIComponent(buildMessage());
-    window.open(
-      `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${msg}`,
-      "_blank",
-    );
+    // window.open(
+    //   `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${msg}`,
+    //   "_blank",
+    // );
+    window.location.href = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${msg}`;
     setSent(true);
   };
 
@@ -390,12 +340,13 @@ const WhatsAppCheckoutModal = ({
           {/* Items */}
           <div className="px-6 py-4 space-y-3 border-b border-gray-100">
             {cart.map((item) => {
+              const lineKey = getCartLineKey(item);
               const isDiscounted = item.id === discountedProductId;
               const unitPrice = isDiscounted
                 ? (item.sale_price * (100 - discountPercent)) / 100
                 : item.sale_price;
               return (
-                <div key={item.id} className="flex items-center gap-3">
+                <div key={lineKey} className="flex items-center gap-3">
                   <Image
                     src={item.images[0]?.url}
                     alt={item.title}
@@ -411,6 +362,9 @@ const WhatsAppCheckoutModal = ({
                       Qty {item.quantity}
                       {item.selectedOptions?.size
                         ? ` · ${item.selectedOptions.size}`
+                        : ""}
+                      {item.selectedOptions?.color
+                        ? ` · ${hexToColorName(item.selectedOptions.color)}`
                         : ""}
                     </p>
                   </div>
@@ -804,24 +758,26 @@ const CartPage = () => {
   };
 
   const removeFromCart = useStore((state: any) => state.removeFromCart);
-  const increaseQuantity = (id: string) => {
+  const increaseQuantity = (cartLineKey: string) => {
     useStore.setState((state: any) => ({
       cart: state.cart.map((item: any) =>
-        item.id === id ? { ...item, quantity: (item.quantity ?? 1) + 1 } : item,
+        getCartLineKey(item) === cartLineKey
+          ? { ...item, quantity: (item.quantity ?? 1) + 1 }
+          : item,
       ),
     }));
   };
-  const decreaseQuantity = (id: string) => {
+  const decreaseQuantity = (cartLineKey: string) => {
     useStore.setState((state: any) => ({
       cart: state.cart.map((item: any) =>
-        item.id === id && item.quantity > 1
+        getCartLineKey(item) === cartLineKey && item.quantity > 1
           ? { ...item, quantity: item.quantity - 1 }
           : item,
       ),
     }));
   };
-  const removeItem = (id: string) =>
-    removeFromCart(id, user, location, deviceInfo);
+  const removeItem = (cartLineKey: string) =>
+    removeFromCart(cartLineKey, user, location, deviceInfo);
 
   const subtotal = cart.reduce(
     (total: number, item: any) => total + item.quantity * item.sale_price,
@@ -902,8 +858,8 @@ const CartPage = () => {
 
   const handleOrderPlaced = (orderId: string) => {
     clearCart(user, location, deviceInfo);
-    toast.success("Order placed! Redirecting to your order…");
-    router.push(`/order/${orderId}`);
+    toast.success("Order placed!");
+    // router.push(`/order/${orderId}`);
   };
 
   return (
@@ -938,7 +894,10 @@ const CartPage = () => {
               </thead>
               <tbody>
                 {cart.map((item: any) => (
-                  <tr key={item.id} className="border-b border-b-[#0000000e]">
+                  <tr
+                    key={getCartLineKey(item)}
+                    className="border-b border-b-[#0000000e]"
+                  >
                     <td className="flex items-center gap-4 p-4">
                       <Image
                         src={item?.images[0]?.url}
@@ -952,17 +911,25 @@ const CartPage = () => {
                         {item?.selectedOptions && (
                           <div className="text-sm text-gray-500">
                             {item.selectedOptions?.color && (
-                              <span>
-                                Color:{" "}
-                                <span
-                                  style={{
-                                    backgroundColor: item.selectedOptions.color,
-                                    width: "12px",
-                                    height: "12px",
-                                    borderRadius: "100%",
-                                    display: "inline-block",
-                                  }}
-                                />
+                              <span className="inline-flex flex-wrap items-center gap-1.5">
+                                <span>Color:</span>
+                                {isCssColorLiteral(
+                                  item.selectedOptions.color,
+                                ) && (
+                                  <span
+                                    className="inline-block shrink-0 rounded-full border border-gray-200 align-middle"
+                                    style={{
+                                      backgroundColor:
+                                        item.selectedOptions.color,
+                                      width: 12,
+                                      height: 12,
+                                    }}
+                                    aria-hidden
+                                  />
+                                )}
+                                <span>
+                                  {hexToColorName(item.selectedOptions.color)}
+                                </span>
                               </span>
                             )}
                             {item.selectedOptions?.size && (
@@ -999,14 +966,14 @@ const CartPage = () => {
                       <div className="flex justify-center items-center border border-gray-200 rounded-[20px] w-[100px] mx-auto p-[6px]">
                         <button
                           className="text-[#000] cursor-pointer text-xl"
-                          onClick={() => decreaseQuantity(item.id)}
+                          onClick={() => decreaseQuantity(getCartLineKey(item))}
                         >
                           -
                         </button>
                         <span className="px-4">{item.quantity}</span>
                         <button
                           className="text-[#000] cursor-pointer text-xl"
-                          onClick={() => increaseQuantity(item.id)}
+                          onClick={() => increaseQuantity(getCartLineKey(item))}
                         >
                           +
                         </button>
@@ -1015,7 +982,7 @@ const CartPage = () => {
                     <td className="text-center">
                       <button
                         className="text-[#818487] cursor-pointer hover:text-[#ff1826] transition duration-200"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(getCartLineKey(item))}
                       >
                         ✕ Remove
                       </button>

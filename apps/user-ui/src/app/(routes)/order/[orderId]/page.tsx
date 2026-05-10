@@ -1,44 +1,9 @@
 "use client";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
+import { colorValueForSwatch } from "apps/user-ui/src/utils/colorDisplayName";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-
-// ── same helper as CartPage ───────────────────────────────────────────────────
-const NAMED_COLORS: [string, number, number, number][] = [
-  ["White",       255,255,255], ["Black",        0,  0,  0  ],
-  ["Red",         255,0,  0  ], ["Green",        0,  128,0  ],
-  ["Blue",        0,  0,  255], ["Yellow",       255,255,0  ],
-  ["Orange",      255,165,0  ], ["Pink",         255,192,203],
-  ["Hot Pink",    255,105,180], ["Purple",       128,0,  128],
-  ["Violet",      238,130,238], ["Lavender",     230,230,250],
-  ["Brown",       165,42, 42 ], ["Beige",        245,245,220],
-  ["Cream",       255,253,208], ["Ivory",        255,255,240],
-  ["Grey",        128,128,128], ["Light Grey",   211,211,211],
-  ["Dark Grey",   64, 64, 64 ], ["Silver",       192,192,192],
-  ["Gold",        255,215,0  ], ["Navy",         0,  0,  128],
-  ["Sky Blue",    135,206,235], ["Teal",         0,  128,128],
-  ["Turquoise",   64, 224,208], ["Mint",         152,255,152],
-  ["Lime",        0,  255,0  ], ["Olive",        128,128,0  ],
-  ["Maroon",      128,0,  0  ], ["Coral",        255,127,80 ],
-  ["Salmon",      250,128,114], ["Peach",        255,218,185],
-  ["Magenta",     255,0,  255], ["Cyan",         0,  255,255],
-  ["Indigo",      75, 0,  130], ["Charcoal",     54, 69, 79 ],
-];
-
-function hexToColorName(hex: string): string {
-  if (!hex || !hex.startsWith("#")) return hex;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return hex;
-  let best = NAMED_COLORS[0], bestDist = Infinity;
-  for (const c of NAMED_COLORS) {
-    const d = (r - c[1]) ** 2 + (g - c[2]) ** 2 + (b - c[3]) ** 2;
-    if (d < bestDist) { bestDist = d; best = c; }
-  }
-  return best[0];
-}
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 const DELIVERY_STEPS = ["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"];
@@ -236,10 +201,13 @@ const Page = () => {
                         <span key={key} className="inline-flex items-center gap-1.5 text-xs bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1 text-gray-600">
                           <span className="font-medium capitalize">{key}:</span>
                           {key === "color" ? (
-                            <>
-                              <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ backgroundColor: value }} />
-                              <span>{hexToColorName(value)}</span>
-                            </>
+                            <span
+                              className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
+                              style={{
+                                backgroundColor: colorValueForSwatch(String(value)),
+                              }}
+                              title={String(value)}
+                            />
                           ) : (
                             <span>{value}</span>
                           )}

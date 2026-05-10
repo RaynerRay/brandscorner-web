@@ -22,6 +22,11 @@ import ProductCard from "../../components/cards/product-card";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/user-ui/src/utils/protected";
 import { useRouter } from "next/navigation";
+import {
+  buildCartLineId,
+  defaultVariantSelection,
+  getCartLineKey,
+} from "apps/user-ui/src/utils/cartVariant";
 
 const ProductDetails = ({ productDetails }: { productDetails: any }) => {
   const { user, isLoading } = useUser();
@@ -50,7 +55,24 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
 
   const addToCart = useStore((state: any) => state.addToCart);
   const cart = useStore((state: any) => state.cart);
-  const isInCart = cart.some((item: any) => item.id === productDetails.id);
+
+  useEffect(() => {
+    if (!productDetails?.id) return;
+    const v = defaultVariantSelection(productDetails);
+    setIsSelected(v.color || "");
+    setIsSizeSelected(v.size || "");
+    setQuantity(1);
+    setCurrentImage(productDetails?.images?.[0]?.url);
+    setCurrentIndex(0);
+  }, [productDetails?.id]);
+
+  const selectionLineId = buildCartLineId(productDetails?.id, {
+    color: isSelected,
+    size: isSizeSelected,
+  });
+  const isInCart = cart.some(
+    (item: any) => getCartLineKey(item) === selectionLineId,
+  );
   const addToWishlist = useStore((state: any) => state.addToWishlist);
   const removeFromWishlist = useStore((state: any) => state.removeFromWishlist);
   const wishlist = useStore((state: any) => state.wishlist);

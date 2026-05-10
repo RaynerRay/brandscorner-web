@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
+import { colorValueForSwatch } from "apps/user-ui/src/utils/colorDisplayName";
 import { ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -41,6 +42,55 @@ const OrdersTable = () => {
       accessorKey: "createdAt",
       header: "Date",
       cell: (info: any) => new Date(info.getValue())?.toLocaleDateString(),
+    },
+    {
+      id: "variants",
+      header: "Variants",
+      cell: ({ row }) => {
+        const items = row.original.items ?? [];
+        if (!Array.isArray(items) || items.length === 0) return "—";
+        const withOpts = items.filter((item: any) => {
+          const o = item?.selectedOptions ?? {};
+          return Boolean(o?.size || o?.color);
+        });
+        if (withOpts.length === 0) return "—";
+        const preview = withOpts.slice(0, 4);
+        const rest = withOpts.length - preview.length;
+        return (
+          <div className="flex flex-col gap-1 max-w-[220px]">
+            {preview.map((item: any, i: number) => {
+              const opts = item?.selectedOptions ?? {};
+              const size = opts?.size;
+              const color = opts?.color;
+              return (
+                <div
+                  key={`${row.original.id}-${i}`}
+                  className="flex items-center gap-1.5 text-xs text-gray-600"
+                >
+                  {size ? <span>{size}</span> : null}
+                  {size && color ? (
+                    <span className="text-gray-400" aria-hidden>
+                      ·
+                    </span>
+                  ) : null}
+                  {color ? (
+                    <span
+                      className="inline-block w-3.5 h-3.5 rounded-full border border-gray-300 shrink-0 align-middle"
+                      style={{
+                        backgroundColor: colorValueForSwatch(String(color)),
+                      }}
+                      title={String(color)}
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
+            {rest > 0 ? (
+              <span className="text-xs text-gray-400">+{rest} more</span>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       id: "actions",

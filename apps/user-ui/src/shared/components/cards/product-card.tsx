@@ -7,6 +7,11 @@ import { useStore } from "apps/user-ui/src/store";
 import useUser from "apps/user-ui/src/hooks/useUser";
 import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
+import {
+  buildCartLineId,
+  defaultVariantSelection,
+  getCartLineKey,
+} from "apps/user-ui/src/utils/cartVariant";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1635405074683-96d6921a2a68?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGVjb21tZXJjZXxlbnwwfHwwfHx8MA%3D%3D";
@@ -35,7 +40,11 @@ const ProductCard = ({
   const wishlist = useStore((state: any) => state.wishlist);
   const isWishlisted = wishlist.some((item: any) => item.id === product.id);
   const cart = useStore((state: any) => state.cart);
-  const isInCart = cart.some((item: any) => item.id === product.id);
+  const defaultOpts = defaultVariantSelection(product);
+  const gridLineId = buildCartLineId(product.id, defaultOpts);
+  const isInCart = cart.some(
+    (item: any) => getCartLineKey(item) === gridLineId,
+  );
 
   const discount = product?.regular_price && product?.sale_price
     ? Math.round(((product.regular_price - product.sale_price) / product.regular_price) * 100)
@@ -59,10 +68,19 @@ const ProductCard = ({
 
   const handleAddToCart = useCallback(() => {
     if (isInCart) return;
-    addToCart({ ...product, quantity: 1 }, user, location, deviceInfo);
+    addToCart(
+      {
+        ...product,
+        quantity: 1,
+        selectedOptions: defaultOpts,
+      },
+      user,
+      location,
+      deviceInfo,
+    );
     setCartNotification(true);
     setTimeout(() => setCartNotification(false), 2500);
-  }, [isInCart, product, user, location, deviceInfo, addToCart]);
+  }, [isInCart, product, defaultOpts, user, location, deviceInfo, addToCart]);
 
   return (
     <>

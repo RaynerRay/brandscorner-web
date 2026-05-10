@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Ratings from "../ratings";
 import { Heart, MapPin, X, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,11 @@ import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/user-ui/src/utils/protected";
+import {
+  buildCartLineId,
+  defaultVariantSelection,
+  getCartLineKey,
+} from "apps/user-ui/src/utils/cartVariant";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1635405074683-96d6921a2a68?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGVjb21tZXJjZXxlbnwwfHwwfHx8MA%3D%3D";
@@ -45,7 +50,22 @@ const ProductDetailsCard = ({
 
   const addToCart = useStore((state: any) => state.addToCart);
   const cart = useStore((state: any) => state.cart);
-  const isInCart = cart.some((item: any) => item.id === data.id);
+
+  useEffect(() => {
+    if (!data?.id) return;
+    const v = defaultVariantSelection(data);
+    setIsSelected(v.color || "");
+    setIsSizeSelected(v.size || "");
+    setQuantity(1);
+  }, [data?.id]);
+
+  const selectionLineId = buildCartLineId(data?.id, {
+    color: isSelected,
+    size: isSizeSelected,
+  });
+  const isInCart = cart.some(
+    (item: any) => getCartLineKey(item) === selectionLineId,
+  );
   const addToWishlist = useStore((state: any) => state.addToWishlist);
   const removeFromWishlist = useStore((state: any) => state.removeFromWishlist);
   const wishlist = useStore((state: any) => state.wishlist);

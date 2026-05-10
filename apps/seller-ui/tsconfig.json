@@ -34,6 +34,8 @@
   "include": [
     "../../apps/seller-ui/.next/types/**/*.ts",
     "../../packages/**/*.tsx",
+    "../../packages/components/**/*.ts",
+    "../../packages/utils/**/*.ts",
     "../../dist/apps/seller-ui/.next/types/**/*.ts",
     "next-env.d.ts",
     "src/**/*.js",

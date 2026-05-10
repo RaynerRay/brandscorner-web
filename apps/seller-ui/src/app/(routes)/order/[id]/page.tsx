@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
+import { colorValueForSwatch } from "packages/utils/color-display-name";
 import { useParams, useRouter } from "next/navigation";
 
 const DELIVERY_STATUSES = [
@@ -276,14 +277,23 @@ const Page = () => {
                 </p>
                 <p className="text-sm text-gray-300">Quantity: {item.quantity}</p>
                 {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
-                  <div className="text-xs text-gray-400 mt-1">
-                    {Object.entries(item.selectedOptions).map(
-                      ([key, value]: [string, any]) =>
-                        value && (
-                          <span key={key} className="mr-3">
-                            <span className="font-medium capitalize">{key}:</span> {value}
-                          </span>
-                        )
+                  <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    {Object.entries(item.selectedOptions).map(([key, value]: [string, any]) =>
+                      value ? (
+                        <span key={key} className="inline-flex gap-2 items-center">
+                          <span className="font-medium capitalize">{key}:</span>
+                          {key.toLowerCase() === "color" ? (
+                            <span
+                              className="w-4 h-4 rounded-full border border-gray-500 flex-shrink-0"
+                              style={{
+                                backgroundColor: colorValueForSwatch(String(value)),
+                              }}
+                            />
+                          ) : (
+                            <span>{value}</span>
+                          )}
+                        </span>
+                      ) : null
                     )}
                   </div>
                 )}

@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { sendKafkaEvent } from "../actions/track-user";
+import {
+  buildCartLineId,
+  normalizeCartItemSelectedOptions,
+} from "../utils/cartVariant";
 
 type CartProduct = {
   id: string;
@@ -10,6 +14,7 @@ type CartProduct = {
   quantity: number;
   shopId: string;
   discount_codes?: string[];
+  cartLineId?: string;
   selectedOptions?: {
     color?: string;
     size?: string;
@@ -28,12 +33,32 @@ type Store = {
   cart: CartProduct[];
   wishlist: WishlistProduct[];
 
-  addToCart: (product: CartProduct, user: any, location: any, deviceInfo: any) => void;
-  removeFromCart: (id: string, user: any, location: any, deviceInfo: any) => void;
+  addToCart: (
+    product: CartProduct,
+    user: any,
+    location: any,
+    deviceInfo: any,
+  ) => void;
+  removeFromCart: (
+    cartLineId: string,
+    user: any,
+    location: any,
+    deviceInfo: any,
+  ) => void;
   clearCart: (user: any, location: any, deviceInfo: any) => void;
 
-  addToWishlist: (product: WishlistProduct, user: any, location: any, deviceInfo: any) => void;
-  removeFromWishlist: (id: string, user: any, location: any, deviceInfo: any) => void;
+  addToWishlist: (
+    product: WishlistProduct,
+    user: any,
+    location: any,
+    deviceInfo: any,
+  ) => void;
+  removeFromWishlist: (
+    id: string,
+    user: any,
+    location: any,
+    deviceInfo: any,
+  ) => void;
 };
 
 export const useStore = create<Store>()(
@@ -42,21 +67,46 @@ export const useStore = create<Store>()(
       cart: [],
       wishlist: [],
 
-      // ── Add to Cart ──────────────────────────────────────────────────────
       addToCart: (product, user, location, deviceInfo) => {
+        const opts = normalizeCartItemSelectedOptions(product.selectedOptions);
+        const cartLineId = buildCartLineId(product.id, opts);
+        const qty = product.quantity ?? 1;
+
         set((state) => {
-          const existing = state.cart.find((item) => item.id === product.id);
-          if (existing) {
+          const idx = state.cart.findIndex(
+            (item) =>
+              (item.cartLineId ??
+                buildCartLineId(
+                  item.id,
+                  normalizeCartItemSelectedOptions(item.selectedOptions),
+                )) === cartLineId,
+          );
+
+          if (idx !== -1) {
             return {
-              cart: state.cart.map((item) =>
-                item.id === product.id
-                  ? { ...item, quantity: (item.quantity ?? 1) + 1 }
-                  : item
+              cart: state.cart.map((item, i) =>
+                i === idx
+                  ? {
+                      ...item,
+                      quantity: (item.quantity ?? 1) + qty,
+                      selectedOptions: opts,
+                      cartLineId,
+                    }
+                  : item,
               ),
             };
           }
+
           return {
-            cart: [...state.cart, { ...product, quantity: product.quantity ?? 1 }],
+            cart: [
+              ...state.cart,
+              {
+                ...product,
+                quantity: qty,
+                selectedOptions: opts,
+                cartLineId,
+              },
+            ],
           };
         });
 
@@ -73,12 +123,25 @@ export const useStore = create<Store>()(
         }
       },
 
-      // ── Remove from Cart ─────────────────────────────────────────────────
-      removeFromCart: (id, user, location, deviceInfo) => {
-        const removed = get().cart.find((item) => item.id === id);
+      removeFromCart: (cartLineId, user, location, deviceInfo) => {
+        const removed = get().cart.find(
+          (item) =>
+            (item.cartLineId ??
+              buildCartLineId(
+                item.id,
+                normalizeCartItemSelectedOptions(item.selectedOptions),
+              )) === cartLineId,
+        );
 
         set((state) => ({
-          cart: state.cart.filter((item) => item.id !== id),
+          cart: state.cart.filter(
+            (item) =>
+              (item.cartLineId ??
+                buildCartLineId(
+                  item.id,
+                  normalizeCartItemSelectedOptions(item.selectedOptions),
+                )) !== cartLineId,
+          ),
         }));
 
         if (user?.id && location && deviceInfo && removed) {
@@ -94,7 +157,6 @@ export const useStore = create<Store>()(
         }
       },
 
-      // ── Clear Cart (called after order is placed) ────────────────────────
       clearCart: (user, location, deviceInfo) => {
         const cartItems = get().cart;
         set({ cart: [] });
@@ -114,10 +176,10 @@ export const useStore = create<Store>()(
         }
       },
 
-      // ── Add to Wishlist ──────────────────────────────────────────────────
       addToWishlist: (product, user, location, deviceInfo) => {
         set((state) => {
-          if (state.wishlist.find((item) => item.id === product.id)) return state;
+          if (state.wishlist.find((item) => item.id === product.id))
+            return state;
           return { wishlist: [...state.wishlist, product] };
         });
 
@@ -134,7 +196,6 @@ export const useStore = create<Store>()(
         }
       },
 
-      // ── Remove from Wishlist ─────────────────────────────────────────────
       removeFromWishlist: (id, user, location, deviceInfo) => {
         const removed = get().wishlist.find((item) => item.id === id);
 
@@ -155,6 +216,6 @@ export const useStore = create<Store>()(
         }
       },
     }),
-    { name: "store-storage" }
-  )
+    { name: "store-storage" },
+  ),
 );

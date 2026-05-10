@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Range } from "react-range";
+import { FILTER_COLOR_OPTIONS } from "packages/components/color-selector/presets";
+import { FILTER_SIZE_OPTIONS } from "packages/components/size-selector/presets";
 
 const MIN = 0;
 const MAX = 1199;
@@ -24,18 +26,6 @@ const Page = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [tempPriceRange, setTempPriceRange] = useState([0, 1199]);
   const [initialized, setInitialized] = useState(false);
-
-  const colors = [
-    { name: "Black", code: "#000" },
-    { name: "Red", code: "#ff0000" },
-    { name: "Green", code: "#00ff00" },
-    { name: "Blue", code: "#0000ff" },
-    { name: "Yellow", code: "#ffff00" },
-    { name: "Magenta", code: "#ff00ff" },
-    { name: "Cyan", code: "#00ffff" },
-  ];
-
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
   // Read URL params on initial load and set state accordingly
   useEffect(() => {
@@ -290,20 +280,20 @@ const Page = () => {
               Filter by Color
             </h3>
             <ul className="space-y-2 !mt-3">
-              {colors.map((color) => (
-                <li key={color.name} className="flex items-center justify-between">
+              {FILTER_COLOR_OPTIONS.map((color) => (
+                <li key={color.value} className="flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                     <input
                       type="checkbox"
-                      checked={selectedColors.includes(color.name)}
-                      onChange={() => toggleColor(color.name)}
+                      checked={selectedColors.includes(color.value)}
+                      onChange={() => toggleColor(color.value)}
                       className="accent-blue-600"
                     />
                     <span
                       className="w-[16px] h-[16px] rounded-full border border-gray-200"
-                      style={{ backgroundColor: color.code }}
+                      style={{ backgroundColor: color.value }}
                     ></span>
-                    {color.name}
+                    {color.label}
                   </label>
                 </li>
               ))}
@@ -314,7 +304,7 @@ const Page = () => {
               Filter by Size
             </h3>
             <ul className="space-y-2 !mt-3">
-              {sizes.map((size) => (
+              {FILTER_SIZE_OPTIONS.map((size) => (
                 <li key={size} className="flex items-center justify-between">
                   <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
                     <input

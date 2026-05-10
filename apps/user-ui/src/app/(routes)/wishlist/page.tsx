@@ -3,6 +3,7 @@ import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useUser from "apps/user-ui/src/hooks/useUser";
 import { useStore } from "apps/user-ui/src/store";
+import { defaultVariantSelection } from "apps/user-ui/src/utils/cartVariant";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -108,7 +109,18 @@ const WishlistPage = () => {
                       <button
                         className="bg-[#2295FF] cursor-pointer text-white px-5 py-2 rounded-md hover:bg-[#007bff] transition-all"
                         onClick={() =>
-                          addToCart(item, user, location, deviceInfo)
+                          addToCart(
+                            {
+                              ...item,
+                              quantity: item.quantity ?? 1,
+                              selectedOptions:
+                                item.selectedOptions ??
+                                defaultVariantSelection(item),
+                            },
+                            user,
+                            location,
+                            deviceInfo,
+                          )
                         }
                       >
                         Add To Cart

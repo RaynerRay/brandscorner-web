@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import axiosInstance from "apps/admin-ui/src/utils/axiosInstance";
+import { colorValueForSwatch } from "packages/utils/color-display-name";
 
 const DELIVERY_STATUSES = ["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"];
 
@@ -180,18 +181,23 @@ const Page = () => {
                 </p>
                 <p className="text-sm text-gray-200">Quantity: {item.quantity}</p>
                 {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
-                  <div className="text-xs text-gray-200 mt-1">
-                    {Object.entries(item.selectedOptions).map(
-                      ([key, value]: [string, any]) =>
-                        value && (
-                          <span key={key} className="mr-3 flex gap-2 items-center">
-                            <span className="font-medium capitalize">{key}:</span>{" "}
+                  <div className="text-xs text-gray-200 mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    {Object.entries(item.selectedOptions).map(([key, value]: [string, any]) =>
+                      value ? (
+                        <span key={key} className="inline-flex gap-2 items-center">
+                          <span className="font-medium capitalize">{key}:</span>
+                          {key.toLowerCase() === "color" ? (
                             <span
-                              className="w-3 h-3 rounded-full block"
-                              style={{ backgroundColor: value }}
+                              className="w-4 h-4 rounded-full border border-gray-400 flex-shrink-0 block"
+                              style={{
+                                backgroundColor: colorValueForSwatch(String(value)),
+                              }}
                             />
-                          </span>
-                        )
+                          ) : (
+                            <span>{value}</span>
+                          )}
+                        </span>
+                      ) : null
                     )}
                   </div>
                 )}
