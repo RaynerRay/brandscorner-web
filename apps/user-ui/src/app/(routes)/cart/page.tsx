@@ -1,5 +1,8 @@
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import useDeliveryEstimate, {
+  type DeliveryEstimate,
+} from "apps/user-ui/src/hooks/useDeliveryEstimate";
 import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useUser from "apps/user-ui/src/hooks/useUser";
@@ -11,6 +14,10 @@ import {
   isCssColorLiteral,
 } from "apps/user-ui/src/utils/colorDisplayName";
 import { countries } from "apps/user-ui/src/utils/countries";
+import {
+  DELIVERY_HUBS,
+  deliveryHubForCity,
+} from "apps/user-ui/src/utils/deliveryEstimate";
 import { deliveryFees } from "apps/user-ui/src/utils/deliveryFees";
 import {
   CheckCircle,
@@ -89,6 +96,70 @@ function getHarareEstimate(rangeIndex: number): number {
   return ranges[rangeIndex].price;
 }
 
+function DeliveryEstimateBanner({
+  estimate,
+  city,
+}: {
+  estimate: DeliveryEstimate;
+  city: string;
+}) {
+  const hubKey = city.trim() ? deliveryHubForCity(city) : null;
+  const hubInfo = hubKey ? DELIVERY_HUBS[hubKey] : null;
+
+  if (estimate.status === "idle") return null;
+
+  if (estimate.status === "skipped") {
+    if (estimate.reason === "incomplete_address" && hubInfo) {
+      return (
+        <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-blue-800 leading-snug">
+          Enter your street address to see approximate distance from{" "}
+          <span className="font-semibold">{hubInfo.referenceLabel}</span> and
+          typical delivery time.
+        </div>
+      );
+    }
+    if (estimate.reason === "geocode_miss") {
+      return (
+        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 leading-snug">
+          We couldn&apos;t locate that address on the map. Check spelling or add
+          a suburb or landmark.
+        </div>
+      );
+    }
+    if (estimate.reason === "error") {
+      return (
+        <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+          Distance estimate unavailable right now. Try again in a moment.
+        </div>
+      );
+    }
+    return null;
+  }
+
+  if (estimate.status === "loading") {
+    return (
+      <div className="mt-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600">
+        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+        Calculating distance from fulfillment hub…
+      </div>
+    );
+  }
+
+  const e = estimate;
+  return (
+    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-950 space-y-1 leading-snug">
+      <p>
+        <span className="font-semibold">~{e.straightLineKm.toFixed(1)} km</span>{" "}
+        from {e.hubReference} (straight-line; roads are often longer).
+      </p>
+      <p>
+        <span className="font-semibold">Avg. delivery time:</span> ~
+        {e.avgTimeRange} (typical, not guaranteed).
+      </p>
+    </div>
+  );
+}
+
 // ─── WhatsApp Checkout Modal ─────────────────────────────────────────────────
 
 type FulfillmentType = "delivery" | "collection";
@@ -102,6 +173,7 @@ type ModalProps = {
   discountedProductId: string;
   storedCouponCode: string;
   selectedAddress: any;
+  deliveryEstimate: DeliveryEstimate;
   onClose: () => void;
   onOrderPlaced: (orderId: string) => void;
 };
@@ -114,6 +186,7 @@ const WhatsAppCheckoutModal = ({
   discountedProductId,
   storedCouponCode,
   selectedAddress,
+  deliveryEstimate,
   onClose,
   onOrderPlaced,
 }: ModalProps) => {
@@ -183,7 +256,7 @@ const WhatsAppCheckoutModal = ({
       if (isHarare) {
         const range = deliveryFees.harare.ranges[harareRangeIndex];
         lines.push(
-          `📍 Estimated distance: ${range.min}–${range.max} km from CBD`,
+          `📍 Estimated distance band (fee tiers): ${range.min}–${range.max} km from CBD`,
         );
         lines.push(
           `🚗 Estimated delivery fee: ~$${estimatedDeliveryFee.toFixed(2)}`,
@@ -193,6 +266,13 @@ const WhatsAppCheckoutModal = ({
         );
       } else if (feePrice) {
         lines.push(`🚗 Delivery fee: $${feePrice.toFixed(2)}`);
+      }
+      if (deliveryEstimate.status === "ok") {
+        const e = deliveryEstimate;
+        lines.push(
+          `📏 ~${e.straightLineKm.toFixed(1)} km from ${e.hubReference} (straight-line)`,
+        );
+        lines.push(`⏱️ Typical delivery time: ~${e.avgTimeRange}`);
       }
       lines.push(
         `💰 *Order Total (incl. delivery): ~$${orderTotal.toFixed(2)}*`,
@@ -428,6 +508,13 @@ const WhatsAppCheckoutModal = ({
                     </p>
                   )}
 
+                  {selectedAddress && (
+                    <DeliveryEstimateBanner
+                      estimate={deliveryEstimate}
+                      city={selectedAddress.city || ""}
+                    />
+                  )}
+
                   {/* Delivery fee info */}
                   {selectedAddress && (
                     <div className="rounded-xl border border-gray-200 overflow-hidden">
@@ -450,8 +537,9 @@ const WhatsAppCheckoutModal = ({
                       {isHarare && (
                         <div className="px-3 py-3 space-y-2 bg-blue-50/50 border-t border-blue-100">
                           <p className="text-xs text-blue-700 font-medium">
-                            📍 Harare delivery is distance-based. Select your
-                            approximate distance from CBD:
+                            📍 Harare fees use distance from our Chinhoyi &amp;
+                            Albion St hub. Select the tier that fits your area
+                            (map estimate above when available):
                           </p>
                           <div className="grid grid-cols-3 gap-1.5">
                             {deliveryFees.harare.ranges.map(
@@ -809,6 +897,23 @@ const CartPage = () => {
     addresses.find((a: any) => a.id === selectedAddressId) ??
     savedInlineAddress ??
     null;
+
+  const estimateAddress =
+    showAddressForm
+      ? {
+          street: inlineAddress.street,
+          city: inlineAddress.city,
+          country: inlineAddress.country,
+        }
+      : selectedAddress
+        ? {
+            street: selectedAddress.street,
+            city: selectedAddress.city,
+            country: selectedAddress.country,
+          }
+        : null;
+
+  const deliveryEstimate = useDeliveryEstimate(estimateAddress);
 
   const handlePlaceOrder = async () => {
     if (showAddressForm) {
@@ -1243,6 +1348,12 @@ const CartPage = () => {
                     )}
                   </div>
                 )}
+                {estimateAddress && (
+                  <DeliveryEstimateBanner
+                    estimate={deliveryEstimate}
+                    city={estimateAddress.city}
+                  />
+                )}
               </div>
               <hr className="my-4 border-slate-200" />
 
@@ -1306,6 +1417,7 @@ const CartPage = () => {
           discountedProductId={discountedProductId}
           storedCouponCode={storedCouponCode}
           selectedAddress={selectedAddress}
+          deliveryEstimate={deliveryEstimate}
           onClose={() => setShowCheckoutModal(false)}
           onOrderPlaced={handleOrderPlaced}
         />
