@@ -210,6 +210,7 @@ const WhatsAppCheckoutModal = ({
   const [echocashPhone, setEchocashPhone] = useState("");
   const [selectedPoint, setSelectedPoint] = useState(COLLECTION_POINTS[0].id);
   const [sent, setSent] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const total = subtotal - discountAmount;
 
@@ -308,7 +309,8 @@ const WhatsAppCheckoutModal = ({
       return;
     }
 
-    // 1. Persist the order as "pending" before opening WhatsApp
+    setIsPlacingOrder(true);
+
     try {
       const collectionPoint =
         fulfillment === "collection"
@@ -350,19 +352,14 @@ const WhatsAppCheckoutModal = ({
 
       const orderId: string = res.data?.order?.id;
       if (orderId) onOrderPlaced(orderId);
-    } catch (err) {
-      toast.error("Could not save your order. Please try again.");
-      return;
-    }
 
-    // 2. Open WhatsApp with the pre-filled summary
-    const msg = encodeURIComponent(buildMessage());
-    // window.open(
-    //   `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${msg}`,
-    //   "_blank",
-    // );
-    window.location.href = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${msg}`;
-    setSent(true);
+      const msg = encodeURIComponent(buildMessage());
+      window.location.href = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${msg}`;
+      setSent(true);
+    } catch {
+      toast.error("Could not save your order. Please try again.");
+      setIsPlacingOrder(false);
+    }
   };
 
   const point = COLLECTION_POINTS.find((p) => p.id === selectedPoint)!;
@@ -393,7 +390,9 @@ const WhatsAppCheckoutModal = ({
 
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={!sent ? onClose : undefined}
+        onClick={
+          !sent && !isPlacingOrder ? onClose : undefined
+        }
       />
 
       <div className="sheet-anim relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -407,8 +406,10 @@ const WhatsAppCheckoutModal = ({
           </div>
           {!sent && (
             <button
+              type="button"
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-700 transition"
+              disabled={isPlacingOrder}
+              className="text-gray-400 hover:text-gray-700 transition disabled:opacity-40 disabled:pointer-events-none"
             >
               <X className="w-5 h-5" />
             </button>
@@ -649,24 +650,39 @@ const WhatsAppCheckoutModal = ({
             {!sent ? (
               <>
                 <button
+                  type="button"
                   onClick={handleSendOrder}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white text-[15px] transition-all active:scale-[0.98]"
+                  disabled={isPlacingOrder}
+                  aria-busy={isPlacingOrder}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white text-[15px] transition-all active:scale-[0.98] disabled:opacity-85 disabled:cursor-wait disabled:active:scale-100"
                   style={{ backgroundColor: "#25D366" }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLElement).style.backgroundColor =
-                      "#1db954")
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLElement).style.backgroundColor =
-                      "#25D366")
-                  }
+                  onMouseEnter={(e) => {
+                    if (!isPlacingOrder)
+                      (e.currentTarget as HTMLElement).style.backgroundColor =
+                        "#1db954";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor =
+                      "#25D366";
+                  }}
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  Place Order via WhatsApp
+                  {isPlacingOrder ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+                      Placing order…
+                    </>
+                  ) : (
+                    <>
+                      <MessageCircle className="w-5 h-5 shrink-0" />
+                      Place Order via WhatsApp
+                    </>
+                  )}
                 </button>
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="w-full text-sm text-gray-400 hover:text-gray-600 transition mt-3 py-1"
+                  disabled={isPlacingOrder}
+                  className="w-full text-sm text-gray-400 hover:text-gray-600 transition mt-3 py-1 disabled:opacity-40 disabled:pointer-events-none"
                 >
                   Cancel
                 </button>
