@@ -16,6 +16,7 @@ import {
 import { countries } from "apps/user-ui/src/utils/countries";
 import {
   DELIVERY_HUBS,
+  approxRoadKmFromStraightLine,
   deliveryHubForCity,
 } from "apps/user-ui/src/utils/deliveryEstimate";
 import { deliveryFees } from "apps/user-ui/src/utils/deliveryFees";
@@ -89,11 +90,24 @@ function getDeliveryFeeLabel(city: string): {
   return { label: "Contact us for a quote", price: null, isHarare: false };
 }
 
-function getHarareEstimate(rangeIndex: number): number {
+/** Harare tiers use half-open bands via successive mins: [0,3), [3,5), … plus extra beyond last max. */
+function harareRangeIndexForRoadKm(roadKm: number): number {
   const ranges = deliveryFees.harare.ranges;
-  if (rangeIndex < 0 || rangeIndex >= ranges.length)
-    return ranges[ranges.length - 1].price;
-  return ranges[rangeIndex].price;
+  const breakpoints = [3, 5, 7, 9, 11, 16];
+  let idx = 0;
+  while (idx < breakpoints.length && roadKm >= breakpoints[idx]) idx++;
+  return Math.min(idx, ranges.length - 1);
+}
+
+function harareFeeFromRoadKm(roadKm: number): number {
+  const ranges = deliveryFees.harare.ranges;
+  const last = ranges[ranges.length - 1];
+  const idx = harareRangeIndexForRoadKm(roadKm);
+  let fee = ranges[idx].price;
+  if (roadKm > last.max) {
+    fee += (roadKm - last.max) * deliveryFees.harare.extraPerKm;
+  }
+  return fee;
 }
 
 function DeliveryEstimateBanner({
@@ -195,20 +209,21 @@ const WhatsAppCheckoutModal = ({
     useState<PaymentMethod>("cash_on_delivery");
   const [echocashPhone, setEchocashPhone] = useState("");
   const [selectedPoint, setSelectedPoint] = useState(COLLECTION_POINTS[0].id);
-  const [harareRangeIndex, setHarareRangeIndex] = useState(0);
   const [sent, setSent] = useState(false);
 
   const total = subtotal - discountAmount;
 
   // Delivery fee calculation
   const deliveryCity = selectedAddress?.city || "";
-  const {
-    label: feeLabel,
-    price: feePrice,
-    isHarare,
-  } = getDeliveryFeeLabel(deliveryCity);
+  const { price: feePrice, isHarare } = getDeliveryFeeLabel(deliveryCity);
+  const harareRoadKm =
+    isHarare && deliveryEstimate.status === "ok"
+      ? approxRoadKmFromStraightLine(deliveryEstimate.straightLineKm)
+      : null;
   const estimatedDeliveryFee = isHarare
-    ? getHarareEstimate(harareRangeIndex)
+    ? harareRoadKm !== null
+      ? harareFeeFromRoadKm(harareRoadKm)
+      : deliveryFees.harare.ranges[0].price
     : (feePrice ?? 0);
   const orderTotal =
     fulfillment === "delivery" ? total + estimatedDeliveryFee : total;
@@ -253,20 +268,7 @@ const WhatsAppCheckoutModal = ({
         );
         lines.push(`   ${selectedAddress.country}`);
       }
-      if (isHarare) {
-        const range = deliveryFees.harare.ranges[harareRangeIndex];
-        lines.push(
-          `📍 Estimated distance band (fee tiers): ${range.min}–${range.max} km from CBD`,
-        );
-        lines.push(
-          `🚗 Estimated delivery fee: ~$${estimatedDeliveryFee.toFixed(2)}`,
-        );
-        lines.push(
-          `_I will share my exact location so you can confirm the final delivery fee._`,
-        );
-      } else if (feePrice) {
-        lines.push(`🚗 Delivery fee: $${feePrice.toFixed(2)}`);
-      }
+      lines.push(`_Delivery fee will be confirmed on WhatsApp._`);
       if (deliveryEstimate.status === "ok") {
         const e = deliveryEstimate;
         lines.push(
@@ -274,9 +276,7 @@ const WhatsAppCheckoutModal = ({
         );
         lines.push(`⏱️ Typical delivery time: ~${e.avgTimeRange}`);
       }
-      lines.push(
-        `💰 *Order Total (incl. delivery): ~$${orderTotal.toFixed(2)}*`,
-      );
+      lines.push(`💰 *Items total: $${total.toFixed(2)}* _(+ delivery fee)_`);
     } else {
       const point = COLLECTION_POINTS.find((p) => p.id === selectedPoint)!;
       lines.push("━━━━━━━━━━━━━━━━━━━━━");
@@ -514,69 +514,6 @@ const WhatsAppCheckoutModal = ({
                       city={selectedAddress.city || ""}
                     />
                   )}
-
-                  {/* Delivery fee info */}
-                  {selectedAddress && (
-                    <div className="rounded-xl border border-gray-200 overflow-hidden">
-                      <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50">
-                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <Truck className="w-4 h-4" />
-                          <span>
-                            Delivery to <strong>{selectedAddress.city}</strong>
-                          </span>
-                        </div>
-                        <span
-                          className={`text-sm font-semibold ${isHarare ? "text-blue-600" : "text-green-700"}`}
-                        >
-                          {isHarare
-                            ? `~$${estimatedDeliveryFee.toFixed(2)}`
-                            : feeLabel}
-                        </span>
-                      </div>
-
-                      {isHarare && (
-                        <div className="px-3 py-3 space-y-2 bg-blue-50/50 border-t border-blue-100">
-                          <p className="text-xs text-blue-700 font-medium">
-                            📍 Harare fees use distance from our Chinhoyi &amp;
-                            Albion St hub. Select the tier that fits your area
-                            (map estimate above when available):
-                          </p>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {deliveryFees.harare.ranges.map(
-                              (range: any, idx: number) => (
-                                <button
-                                  key={idx}
-                                  onClick={() => setHarareRangeIndex(idx)}
-                                  className={`text-xs rounded-lg py-1.5 px-1 border font-medium transition-all ${
-                                    harareRangeIndex === idx
-                                      ? "border-blue-500 bg-blue-500 text-white"
-                                      : "border-gray-200 bg-white text-gray-600 hover:border-blue-300"
-                                  }`}
-                                >
-                                  {range.min}–{range.max}km
-                                  <br />
-                                  <span className="font-bold">
-                                    ${range.price}
-                                  </span>
-                                </button>
-                              ),
-                            )}
-                          </div>
-                          <p className="text-xs text-blue-600 mt-1">
-                            💬 You'll share your exact location on WhatsApp so
-                            we can confirm the final fee.
-                          </p>
-                        </div>
-                      )}
-
-                      {!isHarare && !feePrice && selectedAddress.city && (
-                        <div className="px-3 py-2 border-t border-gray-100 text-xs text-gray-500">
-                          We'll confirm the delivery fee for your area on
-                          WhatsApp.
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -694,31 +631,15 @@ const WhatsAppCheckoutModal = ({
                 </span>
               </div>
             )}
-            {fulfillment === "delivery" && selectedAddress && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">
-                  Delivery fee {isHarare ? "(estimate)" : ""}
-                </span>
-                <span className="text-gray-700 font-medium">
-                  {isHarare
-                    ? `~$${estimatedDeliveryFee.toFixed(2)}`
-                    : feePrice
-                      ? `$${feePrice.toFixed(2)}`
-                      : "TBC"}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold text-base text-gray-900 pt-1">
-              <span>
-                Total{" "}
-                {isHarare && fulfillment === "delivery" ? "(approx.)" : ""}
-              </span>
-              <span>
-                {fulfillment === "collection" || !selectedAddress
-                  ? `$${total.toFixed(2)}`
-                  : feePrice != null || isHarare
-                    ? `$${orderTotal.toFixed(2)}`
-                    : `$${total.toFixed(2)} + delivery`}
+            <div className="flex justify-between items-start font-bold text-base text-gray-900 pt-1">
+              <span className="pt-0.5">Total</span>
+              <span className="text-right">
+                <span className="block">${total.toFixed(2)}</span>
+                {fulfillment === "delivery" && (
+                  <span className="block text-xs font-medium text-gray-600 mt-0.5">
+                    + delivery fee
+                  </span>
+                )}
               </span>
             </div>
           </div>
