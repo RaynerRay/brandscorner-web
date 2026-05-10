@@ -16,10 +16,8 @@ import {
 import { countries } from "apps/user-ui/src/utils/countries";
 import {
   DELIVERY_HUBS,
-  approxRoadKmFromStraightLine,
   deliveryHubForCity,
 } from "apps/user-ui/src/utils/deliveryEstimate";
-import { deliveryFees } from "apps/user-ui/src/utils/deliveryFees";
 import {
   CheckCircle,
   Loader2,
@@ -59,55 +57,8 @@ const COLLECTION_POINTS = [
   },
 ];
 
-// ── Delivery fee helpers ─────────────────────────────────────────────────────
-function getDeliveryFeeLabel(city: string): {
-  label: string;
-  price: number | null;
-  isHarare: boolean;
-} {
-  if (!city) return { label: "", price: null, isHarare: false };
-  const normalized = city.trim().toLowerCase();
-  if (normalized === "harare")
-    return { label: "Calculated by distance", price: null, isHarare: true };
-  const match = deliveryFees.cities.find(
-    (c: any) => c.name.toLowerCase() === normalized,
-  );
-  if (match)
-    return {
-      label: `$${match.price.toFixed(2)}`,
-      price: match.price,
-      isHarare: false,
-    };
-  const special = deliveryFees.specialCities?.find(
-    (c: any) => c.name.toLowerCase() === normalized,
-  );
-  if (special)
-    return {
-      label: `$${special.price.toFixed(2)}`,
-      price: special.price,
-      isHarare: false,
-    };
-  return { label: "Contact us for a quote", price: null, isHarare: false };
-}
-
-/** Harare tiers use half-open bands via successive mins: [0,3), [3,5), … plus extra beyond last max. */
-function harareRangeIndexForRoadKm(roadKm: number): number {
-  const ranges = deliveryFees.harare.ranges;
-  const breakpoints = [3, 5, 7, 9, 11, 16];
-  let idx = 0;
-  while (idx < breakpoints.length && roadKm >= breakpoints[idx]) idx++;
-  return Math.min(idx, ranges.length - 1);
-}
-
-function harareFeeFromRoadKm(roadKm: number): number {
-  const ranges = deliveryFees.harare.ranges;
-  const last = ranges[ranges.length - 1];
-  const idx = harareRangeIndexForRoadKm(roadKm);
-  let fee = ranges[idx].price;
-  if (roadKm > last.max) {
-    fee += (roadKm - last.max) * deliveryFees.harare.extraPerKm;
-  }
-  return fee;
+function isHarareDeliveryCity(city: string): boolean {
+  return city.trim().toLowerCase() === "harare";
 }
 
 function DeliveryEstimateBanner({
@@ -214,20 +165,8 @@ const WhatsAppCheckoutModal = ({
 
   const total = subtotal - discountAmount;
 
-  // Delivery fee calculation
   const deliveryCity = selectedAddress?.city || "";
-  const { price: feePrice, isHarare } = getDeliveryFeeLabel(deliveryCity);
-  const harareRoadKm =
-    isHarare && deliveryEstimate.status === "ok"
-      ? approxRoadKmFromStraightLine(deliveryEstimate.straightLineKm)
-      : null;
-  const estimatedDeliveryFee = isHarare
-    ? harareRoadKm !== null
-      ? harareFeeFromRoadKm(harareRoadKm)
-      : deliveryFees.harare.ranges[0].price
-    : (feePrice ?? 0);
-  const orderTotal =
-    fulfillment === "delivery" ? total + estimatedDeliveryFee : total;
+  const isHarare = isHarareDeliveryCity(deliveryCity);
 
   const buildMessage = () => {
     const lines: string[] = [];
@@ -327,9 +266,6 @@ const WhatsAppCheckoutModal = ({
         fulfillmentType: fulfillment,
         ...(fulfillment === "delivery" && {
           shippingAddressId: selectedAddress?.id,
-          estimatedDeliveryFee: isHarare
-            ? estimatedDeliveryFee
-            : (feePrice ?? 0),
           isHarareDelivery: isHarare,
         }),
         ...(fulfillment === "collection" && {
@@ -347,7 +283,7 @@ const WhatsAppCheckoutModal = ({
           discountPercent,
           discountedProductId,
         },
-        total: orderTotal,
+        total,
       });
 
       const orderId: string = res.data?.order?.id;

@@ -215,7 +215,12 @@ const Page = () => {
         </p>
         <p>
           <span className="font-semibold">Total:</span>{" "}
-          <span className="font-medium">${order.total.toFixed(2)}</span>
+          <span className="inline-flex flex-col items-start">
+            <span className="font-medium">${order.total.toFixed(2)}</span>
+            {order.fulfillmentType === "delivery" && (
+              <span className="text-xs text-gray-400 font-normal mt-0.5">+ delivery fee</span>
+            )}
+          </span>
         </p>
 
         {order.discountAmount > 0 && (

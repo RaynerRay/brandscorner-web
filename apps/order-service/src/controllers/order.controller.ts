@@ -18,7 +18,6 @@ export const createOrder = async (
       echocashPhone,
       fulfillmentType,
       shippingAddressId,
-      estimatedDeliveryFee,
       isHarareDelivery,
       collectionPoint,
       coupon,
@@ -75,7 +74,6 @@ export const createOrder = async (
       return next(new ValidationError("No cart items have a valid shopId."));
     }
 
-    const deliveryFee = fulfillmentType === "delivery" ? (estimatedDeliveryFee ?? 0) : 0;
     const createdOrders: any[] = [];
 
     for (const shopId of Object.keys(shopGrouped)) {
@@ -108,14 +106,14 @@ export const createOrder = async (
         data: {
           userId,
           shopId,
-          total: orderTotal + deliveryFee,
+          total: orderTotal,
           status: status || "pending",
           paymentMethod,
           echocashPhone: paymentMethod === "echocash" ? echocashPhone : null,
           fulfillmentType,
           // Delivery fields
           shippingAddressId: fulfillmentType === "delivery" ? shippingAddressId : null,
-          estimatedDeliveryFee: deliveryFee,
+          estimatedDeliveryFee: 0,
           isHarareDelivery: isHarareDelivery ?? false,
           // Collection field — undefined omits the field (Json? accepts null but not JsonNull type)
           collectionPoint:
