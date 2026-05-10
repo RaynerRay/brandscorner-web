@@ -898,20 +898,19 @@ const CartPage = () => {
     savedInlineAddress ??
     null;
 
-  const estimateAddress =
-    showAddressForm
+  const estimateAddress = showAddressForm
+    ? {
+        street: inlineAddress.street,
+        city: inlineAddress.city,
+        country: inlineAddress.country,
+      }
+    : selectedAddress
       ? {
-          street: inlineAddress.street,
-          city: inlineAddress.city,
-          country: inlineAddress.country,
+          street: selectedAddress.street,
+          city: selectedAddress.city,
+          country: selectedAddress.country,
         }
-      : selectedAddress
-        ? {
-            street: selectedAddress.street,
-            city: selectedAddress.city,
-            country: selectedAddress.country,
-          }
-        : null;
+      : null;
 
   const deliveryEstimate = useDeliveryEstimate(estimateAddress);
 
