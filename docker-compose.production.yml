@@ -1,3 +1,11 @@
+name: eshop
+
+x-app: &app
+  env_file:
+    - .env
+  restart: unless-stopped
+  pull_policy: never
+
 services:
   # Load Balancer (Nginx)
   nginx:
@@ -81,16 +89,17 @@ services:
 
   # API Gateway
   api-gateway:
-    image: ${DOCKER_USERNAME}/api-gateway:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/api-gateway:latest
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/gateway-health"]
       interval: 30s
@@ -104,16 +113,17 @@ services:
 
   # Auth Service
   auth-service:
-    image: ${DOCKER_USERNAME}/auth-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/auth-service:latest
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6001/"]
       interval: 30s
@@ -127,16 +137,17 @@ services:
 
   # Product Service
   product-service:
-    image: ${DOCKER_USERNAME}/product-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/product-service:latest
+    build:
+      context: .
+      dockerfile: apps/product-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -145,16 +156,17 @@ services:
 
   # Order Service
   order-service:
-    image: ${DOCKER_USERNAME}/order-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/order-service:latest
+    build:
+      context: .
+      dockerfile: apps/order-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -163,16 +175,17 @@ services:
 
   # Seller Service
   seller-service:
-    image: ${DOCKER_USERNAME}/seller-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/seller-service:latest
+    build:
+      context: .
+      dockerfile: apps/seller-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -181,16 +194,17 @@ services:
 
   # Admin Service
   admin-service:
-    image: ${DOCKER_USERNAME}/admin-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/admin-service:latest
+    build:
+      context: .
+      dockerfile: apps/admin-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -199,27 +213,30 @@ services:
 
   # Chatting Service
   chatting-service:
-    image: ${DOCKER_USERNAME}/chatting-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/chatting-service:latest
+    build:
+      context: .
+      dockerfile: apps/chatting-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     deploy:
       resources:
         limits:
           memory: 512M
           cpus: "0.3"
 
-  # All services using Kafka should have:
+  # Kafka consumer worker
   kafka-service:
-    image: ${DOCKER_USERNAME}/kafka-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/kafka-service:latest
+    build:
+      context: .
+      dockerfile: apps/kafka-service/Dockerfile
     environment:
       - NODE_ENV=production
       - DOCKER_ENV=true
@@ -227,20 +244,20 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
 
   # Logger Service
   logger-service:
-    image: ${DOCKER_USERNAME}/logger-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/logger-service:latest
+    build:
+      context: .
+      dockerfile: apps/logger-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -249,16 +266,17 @@ services:
 
   # Recommendation Service
   recommendation-service:
-    image: ${DOCKER_USERNAME}/recommendation-service:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/recommendation-service:latest
+    build:
+      context: .
+      dockerfile: apps/recommendation-service/Dockerfile
     environment:
       - NODE_ENV=production
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -267,16 +285,17 @@ services:
 
   # User UI
   user-ui:
-    image: ${DOCKER_USERNAME}/user-ui:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/user-ui:latest
+    build:
+      context: .
+      dockerfile: apps/user-ui/Dockerfile
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_SERVER_URI=https://brandscorner.co.zw
       - NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://brandscorner.co.zw/ws-chatting
       - NEXT_PUBLIC_SELLER_SERVER_URI=https://sellers.brandscorner.co.zw
       - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51Ox7STKfWK4AoG4YmNVlSSToDlYzvr8TGe2d36vzYt5iYQ4JViRC976MOF9A2uXU2wzJt4T2IN5NXscnmpGlXlAz00whmGYvmP
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -285,12 +304,13 @@ services:
 
   # Seller UI
   seller-ui:
-    image: ${DOCKER_USERNAME}/seller-ui:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/seller-ui:latest
+    build:
+      context: .
+      dockerfile: apps/seller-ui/Dockerfile
     environment:
       - NODE_ENV=production
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -299,12 +319,13 @@ services:
 
   # Admin UI
   admin-ui:
-    image: ${DOCKER_USERNAME}/admin-ui:latest
-    env_file:
-      - .env
+    <<: *app
+    image: brandscorner/admin-ui:latest
+    build:
+      context: .
+      dockerfile: apps/admin-ui/Dockerfile
     environment:
       - NODE_ENV=production
-    restart: unless-stopped
     deploy:
       resources:
         limits:

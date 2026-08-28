@@ -1,28 +1,64 @@
 #!/bin/bash
 set -e # Exit on any error
 
-echo "🚀 Starting production deployment..."
+COMPOSE_FILE="docker-compose.production.yml"
+COMPOSE="docker compose -f $COMPOSE_FILE"
 
-# Pull latest images for changed services
-if [ "$CHANGED_BACKEND" != "[]" ]; then
-    echo "Pulling backend service images..."
-    for service in $(echo $CHANGED_BACKEND | jq -r '.[]'); do
-        echo "Pulling $DOCKER_USERNAME/$service:latest"
-        docker pull $DOCKER_USERNAME/$service:latest
-    done
+echo "🚀 Starting production deployment (local images, no Docker Hub)..."
+
+ALL_BACKEND='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
+ALL_FRONTEND='["user-ui","seller-ui","admin-ui"]'
+
+if [ -z "$CHANGED_BACKEND" ] || [ "$CHANGED_BACKEND" = "[]" ]; then
+  if [ -z "$CHANGED_FRONTEND" ] || [ "$CHANGED_FRONTEND" = "[]" ]; then
+    CHANGED_BACKEND="$ALL_BACKEND"
+    CHANGED_FRONTEND="$ALL_FRONTEND"
+  fi
 fi
 
-if [ "$CHANGED_FRONTEND" != "[]" ]; then
-    echo "Pulling frontend service images..."
-    for service in $(echo $CHANGED_FRONTEND | jq -r '.[]'); do
-        echo "Pulling $DOCKER_USERNAME/$service:latest"
-        docker pull $DOCKER_USERNAME/$service:latest
-    done
+BACKEND_SERVICES=$(echo "${CHANGED_BACKEND:-[]}" | jq -r '.[]?' 2>/dev/null || true)
+FRONTEND_SERVICES=$(echo "${CHANGED_FRONTEND:-[]}" | jq -r '.[]?' 2>/dev/null || true)
+
+BUILD_SERVICES=""
+NEED_NX=false
+
+for service in $BACKEND_SERVICES; do
+  BUILD_SERVICES="$BUILD_SERVICES $service"
+  NEED_NX=true
+done
+
+for service in $FRONTEND_SERVICES; do
+  BUILD_SERVICES="$BUILD_SERVICES $service"
+done
+
+BUILD_SERVICES=$(echo "$BUILD_SERVICES" | xargs)
+
+# Backend Dockerfiles copy apps/<service>/dist — compile on the host first.
+if [ "$NEED_NX" = true ]; then
+  echo "Compiling backend services with Nx..."
+  if command -v pnpm >/dev/null 2>&1; then
+    pnpm install --frozen-lockfile
+  else
+    corepack enable
+    corepack prepare pnpm@8.10.2 --activate
+    pnpm install --frozen-lockfile
+  fi
+  npx prisma generate
+  for service in $BACKEND_SERVICES; do
+    echo "Nx build $service"
+    npx nx build "$service"
+  done
 fi
 
-# Start/restart services using docker-compose
+if [ -n "$BUILD_SERVICES" ]; then
+  echo "Building Docker images locally: $BUILD_SERVICES"
+  $COMPOSE build $BUILD_SERVICES
+else
+  echo "No app services to rebuild."
+fi
+
 echo "Deploying services..."
-docker compose -f docker-compose.production.yml up -d
+$COMPOSE up -d
 
 # Wait for services to be healthy with dynamic checking
 echo "Waiting for services to be healthy..."
