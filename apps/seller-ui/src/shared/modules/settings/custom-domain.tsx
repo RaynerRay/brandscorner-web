@@ -221,7 +221,7 @@ const CustomDomains = () => {
             <li>
               <strong>CNAME:</strong> Set{" "}
               <span className="text-green-400">www</span> to point to{" "}
-              <span className="text-blue-400">seller.shondhane.com</span>
+              <span className="text-blue-400">seller.brandscorner.co.zw</span>
             </li>
             <li>
               <strong>A Record:</strong> Point your root domain to{" "}

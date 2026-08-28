@@ -50,9 +50,9 @@ ENV NX_SKIP_NX_CACHE=true
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # ADD NEXT.JS ENVIRONMENT VARIABLES (BEFORE BUILD)
-ENV NEXT_PUBLIC_SERVER_URI=https://shondhane.com
-ENV NEXT_PUBLIC_SOCKET_URI=wss://shondhane.com/ws-loggers
-ENV NEXT_PUBLIC_USER_UI_LINK=https://shondhane.com
+ENV NEXT_PUBLIC_SERVER_URI=https://brandscorner.co.zw
+ENV NEXT_PUBLIC_SOCKET_URI=wss://brandscorner.co.zw/ws-loggers
+ENV NEXT_PUBLIC_USER_UI_LINK=https://brandscorner.co.zw
 
 # Generate Prisma client before building
 RUN npx prisma generate

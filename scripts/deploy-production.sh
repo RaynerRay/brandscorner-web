@@ -41,7 +41,7 @@ check_containers() {
 
 # Function to check if health endpoint responds
 check_health_endpoint() {
-    curl -f -k -s --max-time 5 https://shondhane.com/gateway-health > /dev/null 2>&1
+    curl -f -k -s --max-time 5 https://brandscorner.co.zw/gateway-health > /dev/null 2>&1
     return $?
 }
 
@@ -86,7 +86,7 @@ fi
 echo "Verifying deployment..."
 
 # Check 1: HTTPS endpoint (primary)
-if curl -f -k https://shondhane.com/gateway-health > /dev/null 2>&1; then
+if curl -f -k https://brandscorner.co.zw/gateway-health > /dev/null 2>&1; then
     echo "✅ HTTPS endpoint working!"
     HTTPS_OK=true
 else
@@ -96,7 +96,7 @@ fi
 
 # Check 2: Direct IP with HTTPS (fallback)
 if [ "$HTTPS_OK" = false ]; then
-    if curl -f -k -H "Host: shondhane.com" https://3.239.91.208/gateway-health > /dev/null 2>&1; then
+    if curl -f -k -H "Host: brandscorner.co.zw" https://3.239.91.208/gateway-health > /dev/null 2>&1; then
         echo "✅ Direct HTTPS access working!"
         HTTPS_OK=true
     else
@@ -136,10 +136,10 @@ fi
 if [ "$HTTPS_OK" = true ]; then
     echo ""
     echo "🎉 Deployment successful!"
-    echo "🌐 Site available at: https://shondhane.com"
-    echo "🔧 API Health: https://shondhane.com/gateway-health"
-    echo "👥 Sellers: https://sellers.shondhane.com"
-    echo "⚙️  Admin: https://admin.shondhane.com"
+    echo "🌐 Site available at: https://brandscorner.co.zw"
+    echo "🔧 API Health: https://brandscorner.co.zw/gateway-health"
+    echo "👥 Sellers: https://sellers.brandscorner.co.zw"
+    echo "⚙️  Admin: https://admin.brandscorner.co.zw"
 else
     echo ""
     echo "❌ Deployment verification failed!"
@@ -147,6 +147,6 @@ else
     echo "  docker ps | grep eshop"
     echo "  docker logs eshop-nginx-1 --tail 20"
     echo "  docker logs eshop-api-gateway-1 --tail 20"
-    echo "  curl -v https://shondhane.com/gateway-health"
+    echo "  curl -v https://brandscorner.co.zw/gateway-health"
     exit 1
 fi

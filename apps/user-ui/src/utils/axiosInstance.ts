@@ -57,7 +57,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         await axios.post(
-          `${process.env.NEXT_PUBLIC_SERVER_URI || "https://shondhane.com"}/auth/api/refresh-token`,
+          `${process.env.NEXT_PUBLIC_SERVER_URI || "https://brandscorner.co.zw"}/auth/api/refresh-token`,
           {},
           { withCredentials: true }
         );
