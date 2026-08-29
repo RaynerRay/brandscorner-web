@@ -8,8 +8,8 @@ COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 COPY prisma ./prisma
 
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+RUN pnpm install --prod --no-frozen-lockfile
 
 
 RUN npx prisma generate

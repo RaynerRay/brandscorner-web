@@ -1,237 +1,27 @@
-name: Build & Deploy
+name: Deploy
 
 on:
   push:
-    branches: [master, develop]
-  pull_request:
     branches: [master]
   workflow_dispatch:
-    inputs:
-      force_rebuild:
-        description: "Force rebuild all services"
-        required: false
-        default: "false"
 
 jobs:
-  # Detect which services have changed
-  detect-changes:
+  deploy:
     runs-on: ubuntu-latest
-    outputs:
-      backend-matrix: ${{ steps.set-matrix.outputs.backend-matrix }}
-      frontend-matrix: ${{ steps.set-matrix.outputs.frontend-matrix }}
-      has-backend-changes: ${{ steps.set-matrix.outputs.has-backend-changes }}
-      has-frontend-changes: ${{ steps.set-matrix.outputs.has-frontend-changes }}
-      changed-backend: ${{ steps.set-matrix.outputs.changed-backend }}
-      changed-frontend: ${{ steps.set-matrix.outputs.changed-frontend }}
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v41
-        with:
-          files_yaml: |
-            auth_service:
-              - apps/auth-service/**
-              - packages/libs/redis/**
-              - packages/libs/prisma/**
-              - packages/middleware/**
-              - packages/error-handler/**
-              - packages/utils/logs/**
-            product_service:
-              - apps/product-service/**
-              - packages/libs/imagekit/**
-              - packages/libs/prisma/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            order_service:
-              - apps/order-service/**
-              - packages/libs/prisma/**
-              - packages/middleware/**
-              - packages/error-handler/**
-              - packages/utils/logs/**
-            seller_service:
-              - apps/seller-service/**
-              - packages/libs/prisma/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            admin_service:
-              - apps/admin-service/**
-              - packages/libs/prisma/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            chatting_service:
-              - apps/chatting-service/**
-              - packages/libs/redis/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            kafka_service:
-              - apps/kafka-service/**
-              - packages/utils/kafka/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            logger_service:
-              - apps/logger-service/**
-              - packages/utils/logs/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            recommendation_service:
-              - apps/recommendation-service/**
-              - packages/libs/prisma/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            api_gateway:
-              - apps/api-gateway/**
-              - packages/middleware/**
-              - packages/error-handler/**
-            user_ui:
-              - apps/user-ui/**
-              - packages/components/**
-            seller_ui:
-              - apps/seller-ui/**
-              - packages/components/**
-            admin_ui:
-              - apps/admin-ui/**
-              - packages/components/**
-            shared:
-              - package.json
-              - pnpm-lock.yaml
-              - pnpm-workspace.yaml
-              - prisma/**
-
-      - name: Set matrix for changed services
-        id: set-matrix
-        run: |
-          # Initialize arrays
-          BACKEND_SERVICES=()
-          FRONTEND_SERVICES=()
-
-          # Check if force rebuild is requested
-          if [[ "${{ github.event.inputs.force_rebuild }}" == "true" ]]; then
-            echo "Force rebuild requested - building all services"
-            BACKEND_SERVICES=("auth-service" "product-service" "order-service" "seller-service" "admin-service" "chatting-service" "kafka-service" "logger-service" "recommendation-service" "api-gateway")
-            FRONTEND_SERVICES=("user-ui" "seller-ui" "admin-ui")
-          else
-            # Check shared files (affects all services)
-            if [[ "${{ steps.changed-files.outputs.shared_any_changed }}" == "true" ]]; then
-              echo "Shared files changed - building all services"
-              BACKEND_SERVICES=("auth-service" "product-service" "order-service" "seller-service" "admin-service" "chatting-service" "kafka-service" "logger-service" "recommendation-service" "api-gateway")
-              FRONTEND_SERVICES=("user-ui" "seller-ui" "admin-ui")
-            else
-              # Check individual services
-              [[ "${{ steps.changed-files.outputs.auth_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("auth-service")
-              [[ "${{ steps.changed-files.outputs.product_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("product-service")
-              [[ "${{ steps.changed-files.outputs.order_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("order-service")
-              [[ "${{ steps.changed-files.outputs.seller_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("seller-service")
-              [[ "${{ steps.changed-files.outputs.admin_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("admin-service")
-              [[ "${{ steps.changed-files.outputs.chatting_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("chatting-service")
-              [[ "${{ steps.changed-files.outputs.kafka_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("kafka-service")
-              [[ "${{ steps.changed-files.outputs.logger_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("logger-service")
-              [[ "${{ steps.changed-files.outputs.recommendation_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("recommendation-service")
-              [[ "${{ steps.changed-files.outputs.api_gateway_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("api-gateway")
-              
-              [[ "${{ steps.changed-files.outputs.user_ui_any_changed }}" == "true" ]] && FRONTEND_SERVICES+=("user-ui")
-              [[ "${{ steps.changed-files.outputs.seller_ui_any_changed }}" == "true" ]] && FRONTEND_SERVICES+=("seller-ui")
-              [[ "${{ steps.changed-files.outputs.admin_ui_any_changed }}" == "true" ]] && FRONTEND_SERVICES+=("admin-ui")
-            fi
-          fi
-
-          # Create matrix JSON
-          if [ ${#BACKEND_SERVICES[@]} -eq 0 ]; then
-            echo "backend-matrix=[]" >> $GITHUB_OUTPUT
-            echo "has-backend-changes=false" >> $GITHUB_OUTPUT
-            echo "changed-backend=[]" >> $GITHUB_OUTPUT
-          else
-            BACKEND_JSON=$(printf '%s\n' "${BACKEND_SERVICES[@]}" | jq -R . | jq -s -c .)
-            echo "backend-matrix={\"service\":$BACKEND_JSON}" >> $GITHUB_OUTPUT
-            echo "has-backend-changes=true" >> $GITHUB_OUTPUT
-            echo "changed-backend=$BACKEND_JSON" >> $GITHUB_OUTPUT
-          fi
-
-          if [ ${#FRONTEND_SERVICES[@]} -eq 0 ]; then
-            echo "frontend-matrix=[]" >> $GITHUB_OUTPUT
-            echo "has-frontend-changes=false" >> $GITHUB_OUTPUT
-            echo "changed-frontend=[]" >> $GITHUB_OUTPUT
-          else
-            FRONTEND_JSON=$(printf '%s\n' "${FRONTEND_SERVICES[@]}" | jq -R . | jq -s -c .)
-            echo "frontend-matrix={\"service\":$FRONTEND_JSON}" >> $GITHUB_OUTPUT
-            echo "has-frontend-changes=true" >> $GITHUB_OUTPUT
-            echo "changed-frontend=$FRONTEND_JSON" >> $GITHUB_OUTPUT
-          fi
-
-          # Log what will be built
-          echo "Services to build:"
-          echo "Backend: ${BACKEND_SERVICES[@]}"
-          echo "Frontend: ${FRONTEND_SERVICES[@]}"
-
-  # Deploy to EC2 — images are built on the host, not pulled from Docker Hub
-  deploy-to-ec2:
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    if: |
-      github.ref == 'refs/heads/master' &&
-      github.event_name == 'push'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to EC2
+      - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
+          command_timeout: 60m
           script: |
-            # Navigate to app directory
             cd /home/ubuntu/brandscorner-web
-
-            # Configure git to use personal access token
             git config --global url."https://${{ secrets.GH_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
-            # Discard local changes to tracked files before pulling
-            git reset --hard HEAD
-            # Optionally, clean untracked files except .env
+            git fetch origin master
+            git reset --hard origin/master
             git clean -fd -e .env
-
-            # Pull latest code
-            git pull origin master
-
-            # Pass only changed services to deployment script
-            export CHANGED_BACKEND='${{ needs.detect-changes.outputs.changed-backend }}'
-            export CHANGED_FRONTEND='${{ needs.detect-changes.outputs.changed-frontend }}'
-
-            # If no changes, deploy all (for initial deployment)
-            if [ "$CHANGED_BACKEND" == "[]" ] && [ "$CHANGED_FRONTEND" == "[]" ]; then
-              export CHANGED_BACKEND='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
-              export CHANGED_FRONTEND='["user-ui","seller-ui","admin-ui"]'
-            fi
-
-            # Make script executable and run deployment
             chmod +x scripts/deploy-production.sh
             ./scripts/deploy-production.sh
-
-  # Deployment summary
-  notify-completion:
-    needs: [detect-changes, deploy-to-ec2]
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Build & Deploy Summary
-        run: |
-          echo "🎉 Build and deployment completed!"
-          echo "Changed backend services: ${{ needs.detect-changes.outputs.changed-backend }}"
-          echo "Changed frontend services: ${{ needs.detect-changes.outputs.changed-frontend }}"
-          echo "Deployment status: ${{ needs.deploy-to-ec2.result }}"
-
-          if [ "${{ needs.deploy-to-ec2.result }}" == "success" ] || [ "${{ needs.deploy-to-ec2.result }}" == "skipped" ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment failed"
-          fi

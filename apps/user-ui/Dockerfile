@@ -1,22 +1,14 @@
 # ---- Dependencies Stage ----
 FROM node:20-alpine AS deps
 WORKDIR /app
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-
-# Copy workspace files
-COPY pnpm-workspace.yaml ./
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-
-# Copy user-ui package.json
-COPY apps/user-ui/package.json ./apps/user-ui/
-
-# Copy shared packages
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps ./apps
 COPY packages ./packages
+COPY prisma ./prisma
 
-# Install dependencies
 RUN pnpm install --filter user-ui... --frozen-lockfile
 
 # ---- Build Stage ----
@@ -24,7 +16,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules

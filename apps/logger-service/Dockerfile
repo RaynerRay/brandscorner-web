@@ -16,8 +16,8 @@ COPY packages/utils/kafka ./packages/utils/kafka
 COPY prisma ./prisma
 
 # Enable pnpm and install dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+RUN pnpm install --prod --no-frozen-lockfile
 
 
 # Generate Prisma client

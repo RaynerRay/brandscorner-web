@@ -1,30 +1,22 @@
 # 1. Install dependencies for seller-ui only
 FROM node:20-alpine AS deps
 WORKDIR /app
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-
-# Copy workspace files
-COPY pnpm-workspace.yaml ./
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-
-# Copy seller-ui package.json
-COPY apps/seller-ui/package.json ./apps/seller-ui/
-
-# Copy shared packages
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps ./apps
 COPY packages ./packages
+COPY prisma ./prisma
 
-# Install dependencies
-RUN pnpm install
+RUN pnpm install --filter seller-ui... --frozen-lockfile
 
 # 2. Build the app
 FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 #copy dependencies
 COPY --from=deps /app/node_modules ./node_modules

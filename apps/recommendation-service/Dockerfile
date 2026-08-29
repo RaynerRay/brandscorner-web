@@ -15,8 +15,8 @@ COPY packages/error-handler ./packages/error-handler
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+RUN pnpm install --prod --no-frozen-lockfile
 
 # Copy built application
 COPY apps/recommendation-service/dist ./dist

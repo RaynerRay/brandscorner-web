@@ -12,13 +12,13 @@ declare -A SERVICES=(
     ["api-gateway"]="8080"
     ["auth-service"]="6001"
     ["product-service"]="6002"
-    ["order-service"]="6003"
-    ["seller-service"]="6004"
+    ["order-service"]="6004"
+    ["seller-service"]="6003"
     ["admin-service"]="6005"
     ["chatting-service"]="6006"
     ["kafka-service"]="6007"
     ["logger-service"]="6008"
-    ["recommendation-service"]="6009"
+    ["recommendation-service"]="6007"
 )
 
 declare -A UI_SERVICES=(

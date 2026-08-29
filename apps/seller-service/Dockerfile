@@ -17,8 +17,8 @@ COPY packages/utils/logs ./packages/utils/logs
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+RUN pnpm install --prod --no-frozen-lockfile
 
 # Copy built application
 COPY apps/seller-service/dist ./dist
@@ -47,7 +47,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
 USER nodejs
 
 # Expose the correct port
-EXPOSE 6004
+EXPOSE 6003
 
 # Use entrypoint script to generate Prisma client at runtime
 ENTRYPOINT ["./entrypoint.sh"]
