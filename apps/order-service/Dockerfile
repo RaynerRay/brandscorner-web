@@ -22,6 +22,7 @@ RUN pnpm install --prod --no-frozen-lockfile
 # Copy built application
 COPY apps/order-service/dist ./dist
 COPY apps/order-service/entrypoint.sh ./entrypoint.sh
+COPY apps/order-service/src/utils/email-templates ./apps/order-service/src/utils/email-templates
 
 # ---- Production Stage ----
 FROM node:20-alpine
@@ -41,6 +42,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
+COPY --from=builder --chown=nodejs:nodejs /app/apps/order-service/src/utils/email-templates ./apps/order-service/src/utils/email-templates
 RUN chmod +x ./entrypoint.sh
 
 # Switch to non-root user
