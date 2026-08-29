@@ -21,7 +21,7 @@ RUN pnpm install --prod --no-frozen-lockfile
 
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN npx --yes prisma@6.12.0 generate
 
 # Copy built application
 COPY apps/logger-service/dist ./dist

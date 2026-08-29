@@ -13,7 +13,7 @@ echo "==> Preparing pnpm 9 (matches lockfileVersion 9.0)"
 corepack enable
 corepack prepare pnpm@9.15.9 --activate
 pnpm install --no-frozen-lockfile
-npx prisma generate
+pnpm exec prisma generate
 
 echo "==> Compiling backend services (Dockerfiles copy apps/*/dist)"
 npx nx run-many --target=build --projects="$BACKENDS" --parallel=3

@@ -12,7 +12,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 RUN pnpm install --prod --no-frozen-lockfile
 
 
-RUN npx prisma generate
+RUN npx --yes prisma@6.12.0 generate
 
 COPY apps/api-gateway/dist ./dist
 

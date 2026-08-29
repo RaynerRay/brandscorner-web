@@ -48,7 +48,7 @@ ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://brandscorner.co.zw/ws-chatting
 ENV NEXT_PUBLIC_USER_UI_LINK=https://brandscorner.co.zw
 
 # Generate Prisma client before building
-RUN npx prisma generate
+RUN npx --yes prisma@6.12.0 generate
 
 # Use Next.js build directly instead of Nx
 WORKDIR /app/apps/seller-ui
