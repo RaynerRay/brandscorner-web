@@ -7,7 +7,7 @@ x-app: &app
     NODE_ENV: production
     KAFKA_BROKERS: kafka:29092
   restart: unless-stopped
-  pull_policy: never
+  pull_policy: build
   depends_on:
     kafka:
       condition: service_healthy
@@ -74,7 +74,6 @@ services:
 
   api-gateway:
     <<: *app
-    image: brandscorner/api-gateway:latest
     build:
       context: .
       dockerfile: apps/api-gateway/Dockerfile
@@ -85,7 +84,6 @@ services:
 
   auth-service:
     <<: *app
-    image: brandscorner/auth-service:latest
     build:
       context: .
       dockerfile: apps/auth-service/Dockerfile
@@ -96,7 +94,6 @@ services:
 
   product-service:
     <<: *app
-    image: brandscorner/product-service:latest
     build:
       context: .
       dockerfile: apps/product-service/Dockerfile
@@ -107,7 +104,6 @@ services:
 
   seller-service:
     <<: *app
-    image: brandscorner/seller-service:latest
     build:
       context: .
       dockerfile: apps/seller-service/Dockerfile
@@ -118,7 +114,6 @@ services:
 
   order-service:
     <<: *app
-    image: brandscorner/order-service:latest
     build:
       context: .
       dockerfile: apps/order-service/Dockerfile
@@ -129,7 +124,6 @@ services:
 
   admin-service:
     <<: *app
-    image: brandscorner/admin-service:latest
     build:
       context: .
       dockerfile: apps/admin-service/Dockerfile
@@ -140,7 +134,6 @@ services:
 
   chatting-service:
     <<: *app
-    image: brandscorner/chatting-service:latest
     build:
       context: .
       dockerfile: apps/chatting-service/Dockerfile
@@ -152,7 +145,6 @@ services:
 
   kafka-service:
     <<: *app
-    image: brandscorner/kafka-service:latest
     build:
       context: .
       dockerfile: apps/kafka-service/Dockerfile
@@ -163,7 +155,6 @@ services:
 
   logger-service:
     <<: *app
-    image: brandscorner/logger-service:latest
     build:
       context: .
       dockerfile: apps/logger-service/Dockerfile
@@ -175,7 +166,6 @@ services:
 
   recommendation-service:
     <<: *app
-    image: brandscorner/recommendation-service:latest
     build:
       context: .
       dockerfile: apps/recommendation-service/Dockerfile
@@ -185,7 +175,6 @@ services:
       PORT: 6007
 
   user-ui:
-    image: brandscorner/user-ui:latest
     build:
       context: .
       dockerfile: apps/user-ui/Dockerfile
@@ -195,10 +184,9 @@ services:
       NODE_ENV: production
       PORT: 3000
     restart: unless-stopped
-    pull_policy: never
+    pull_policy: build
 
   seller-ui:
-    image: brandscorner/seller-ui:latest
     build:
       context: .
       dockerfile: apps/seller-ui/Dockerfile
@@ -208,10 +196,9 @@ services:
       NODE_ENV: production
       PORT: 3001
     restart: unless-stopped
-    pull_policy: never
+    pull_policy: build
 
   admin-ui:
-    image: brandscorner/admin-ui:latest
     build:
       context: .
       dockerfile: apps/admin-ui/Dockerfile
@@ -221,7 +208,7 @@ services:
       NODE_ENV: production
       PORT: 3002
     restart: unless-stopped
-    pull_policy: never
+    pull_policy: build
 
 networks:
   default:
