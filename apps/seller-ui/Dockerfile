@@ -19,8 +19,8 @@ ENV NODE_ENV=production
 ENV NX_DAEMON=false
 ENV NX_SKIP_NX_CACHE=true
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_SERVER_URI=https://brandscorner.co.zw
-ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://brandscorner.co.zw/ws-chatting
+ENV NEXT_PUBLIC_SERVER_URI=https://sellers.brandscorner.co.zw
+ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://sellers.brandscorner.co.zw/ws-chatting
 ENV NEXT_PUBLIC_USER_UI_LINK=https://brandscorner.co.zw
 
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate

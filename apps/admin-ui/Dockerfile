@@ -19,7 +19,7 @@ ENV NODE_ENV=production
 ENV NX_DAEMON=false
 ENV NX_SKIP_NX_CACHE=true
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_SERVER_URI=https://brandscorner.co.zw
+ENV NEXT_PUBLIC_SERVER_URI=https://admin.brandscorner.co.zw
 ENV NEXT_PUBLIC_SOCKET_URI=wss://brandscorner.co.zw/ws-loggers
 ENV NEXT_PUBLIC_USER_UI_LINK=https://brandscorner.co.zw
 
