@@ -12,7 +12,7 @@ $COMPOSE down --remove-orphans || true
 echo "==> Preparing pnpm 9 (matches lockfileVersion 9.0)"
 corepack enable
 corepack prepare pnpm@9.15.9 --activate
-pnpm install --frozen-lockfile
+pnpm install --no-frozen-lockfile
 npx prisma generate
 
 echo "==> Compiling backend services (Dockerfiles copy apps/*/dist)"

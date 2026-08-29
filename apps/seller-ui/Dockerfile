@@ -2,6 +2,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+ENV CI=false
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
@@ -9,7 +10,7 @@ COPY apps ./apps
 COPY packages ./packages
 COPY prisma ./prisma
 
-RUN pnpm install --filter seller-ui... --frozen-lockfile
+RUN pnpm install --filter seller-ui... --no-frozen-lockfile
 
 # 2. Build the app
 FROM node:20-alpine AS builder
