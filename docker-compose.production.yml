@@ -17,18 +17,8 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /var/www/certbot:/var/www/certbot:ro
-    depends_on:
-      - api-gateway
-      - user-ui
-      - seller-ui
-      - admin-ui
-      - chatting-service
-      - logger-service
     restart: unless-stopped
 
   zookeeper:
